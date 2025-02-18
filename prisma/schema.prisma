@@ -1,0 +1,95 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+
+model address {
+  id         Int     @id @default(autoincrement())
+  user_id    Int
+  zip_code   Int
+  street     String
+  number     Int
+  complement String?
+  city       String
+  state      String
+  is_main    Boolean
+  user       user    @relation(fields: [user_id], references: [id])
+}
+
+model email {
+  id             Int      @id @default(autoincrement())
+  user_id        Int
+  email          String
+  is_main        Boolean
+  email_verified Boolean?
+  user           user     @relation(fields: [user_id], references: [id])
+}
+
+model path {
+  id   Int    @id @default(autoincrement())
+  path String
+  rule rule[]
+}
+
+model role {
+  id        Int         @id @default(autoincrement())
+  name      String
+  is_admin  Boolean
+  rule      rule[]
+  user_role user_role[]
+}
+
+model rule {
+  id      Int     @id @default(autoincrement())
+  role_id Int
+  path_id Int
+  create  Boolean
+  read    Boolean
+  update  Boolean
+  delete  Boolean
+  path    path    @relation(fields: [path_id], references: [id])
+  role    role    @relation(fields: [role_id], references: [id])
+}
+
+model telephone {
+  id           Int     @id @default(autoincrement())
+  user_id      Int
+  country_code Int
+  state_code   Int
+  number       Int
+  type         String
+  is_main      Boolean
+  user         user    @relation(fields: [user_id], references: [id])
+}
+
+model user {
+  id         Int         @id @default(autoincrement())
+  name       String?
+  nickname   String?
+  picture    String?
+  updated_at DateTime?
+  sub        String      @unique
+  address    address[]
+  email      email[]
+  telephone  telephone[]
+  user_role  user_role[]
+}
+
+model user_role {
+  id      Int  @id @default(autoincrement())
+  user_id Int
+  role_id Int
+  role    role @relation(fields: [role_id], references: [id])
+  user    user @relation(fields: [user_id], references: [id])
+}
