@@ -1,15 +1,8 @@
-import { Geist, Geist_Mono } from "next/font/google";
+import AuthProviders from "@/utils/AuthProviders";
 import "./globals.css";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+import Header from "@/components/header/Header";
+import Footer from "@/components/footer/Footer";
+import { UserProvider } from "@auth0/nextjs-auth0/client";
 
 export const metadata = {
   title: "Create Next App",
@@ -19,10 +12,18 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        {children}
+      <body>
+        <div className="flex flex-col min-h-screen">
+          <UserProvider>
+            <AuthProviders>
+              <Header />
+
+              <main className="flex-grow">{children}</main>
+
+              <Footer />
+            </AuthProviders>
+          </UserProvider>
+        </div>
       </body>
     </html>
   );
