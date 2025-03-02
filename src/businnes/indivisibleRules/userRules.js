@@ -27,3 +27,11 @@ export const updateUser = (user) => {
     updated_at: new Date(),
   });
 };
+
+export const applyCPFMask = (valor) => {
+  valor = valor.replace(/\D/g, ""); // Remove tudo que não é dígito
+  valor = valor.replace(/(\d{3})(\d)/, "$1.$2"); // Adiciona ponto após 3 dígitos
+  valor = valor.replace(/(\d{3})(\d)/, "$1.$2"); // Adiciona ponto após mais 3 dígitos
+  valor = valor.replace(/(\d{3})(\d{1,2})$/, "$1-$2"); // Adiciona traço antes dos últimos 2 dígitos
+  return valor;
+};

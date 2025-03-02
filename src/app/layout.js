@@ -1,8 +1,11 @@
+import PropTypes from "prop-types";
 import AuthProviders from "@/utils/AuthProviders";
 import "./globals.css";
 import Header from "@/components/header/Header";
 import Footer from "@/components/footer/Footer";
 import { UserProvider } from "@auth0/nextjs-auth0/client";
+import Logo from "@/components/logo/Logo";
+import Login from "@/components/login/Login";
 
 export const metadata = {
   title: "Create Next App",
@@ -11,15 +14,20 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en">
-      <body>
+    <html lang="pt-BR">
+      <head>
+        <title>Meu Site</title>
+        <meta name="description" content="Descrição do meu site" />
+        {/* Você pode adicionar outras tags <head> aqui */}
+      </head>
+      <body className="font-sans">
         <div className="flex flex-col min-h-screen">
           <UserProvider>
             <AuthProviders>
               <Header />
-
-              <main className="flex-grow">{children}</main>
-
+              <main className="min-h-screen bg-gradient-to-br from-neutral-white to-accent-dark primary flex items-start p-5 justify-center">
+                {children}
+              </main>
               <Footer />
             </AuthProviders>
           </UserProvider>
@@ -28,3 +36,8 @@ export default function RootLayout({ children }) {
     </html>
   );
 }
+
+// Definir PropTypes
+RootLayout.propTypes = {
+  children: PropTypes.node.isRequired,
+};

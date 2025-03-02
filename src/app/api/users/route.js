@@ -10,7 +10,6 @@ export const POST = withApiAuthRequired(async function create(req) {
 
     return NextResponse.json(result, { status: 200 });
   } catch (error) {
-    console.error("Erro:", error);
     return NextResponse.json(
       { error: "Failed to create or update user" },
       { status: 500 }

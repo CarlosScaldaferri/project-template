@@ -2,6 +2,7 @@
 
 import { AuthProvider } from "@/contexts/AuthContext";
 import { Auth0Provider } from "@auth0/auth0-react";
+import PropTypes from "prop-types";
 
 const AuthProviders = ({ children }) => {
   return (
@@ -16,6 +17,11 @@ const AuthProviders = ({ children }) => {
       {<AuthProvider>{children}</AuthProvider>}
     </Auth0Provider>
   );
+};
+
+// Definir PropTypes
+AuthProviders.propTypes = {
+  children: PropTypes.node.isRequired,
 };
 
 export default AuthProviders;

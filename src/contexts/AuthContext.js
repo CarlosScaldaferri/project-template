@@ -1,43 +1,47 @@
-import { createContext, useEffect, useState } from "react";
+import { createContext, useEffect, useMemo, useState } from "react";
 import { useUser } from "@auth0/nextjs-auth0/client";
 import apiService from "@/services/apiService";
+import PropTypes from "prop-types";
 
-export const AuthContext = createContext();
+export const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
-  const [authenticatedUser, setAuthenticatedUser] = useState(null);
-  const { user, isLoading } = useUser(); // Hook que retorna o `user` da Auth0
+  const { user: auth0User, isLoading } = useUser();
+  const [user, setUser] = useState(null);
+  const [error, setError] = useState(null);
+  const [accessToken, setAccessToken] = useState(null);
 
   useEffect(() => {
     const updateUser = async () => {
-      if (
-        user &&
-        user.sub &&
-        JSON.stringify(user) !== JSON.stringify(authenticatedUser)
-      ) {
+      if (auth0User?.sub) {
         try {
-          const response = await apiService.request("/api/users/create", {
-            user: user.accessToken,
+          setAccessToken(auth0User.accessToken);
+          const response = await apiService.request("/api/users", {
+            user: accessToken,
             method: "POST",
-            data: user,
+            data: auth0User,
           });
-          const { user: newUser } = await response;
-
-          setAuthenticatedUser(newUser);
+          setUser(response);
         } catch (error) {
           console.error("Erro ao criar ou atualizar usuário:", error);
+          setError(error);
         }
       }
     };
 
-    if (user && !isLoading) {
+    if (auth0User && !isLoading) {
       updateUser();
     }
-  }, [user]);
+  }, [auth0User, isLoading]);
 
-  return (
-    <AuthContext.Provider value={{ user: authenticatedUser, isLoading }}>
-      {children}
-    </AuthContext.Provider>
+  const value = useMemo(
+    () => ({ user, error, isLoading, accessToken }),
+    [user, error, isLoading, accessToken]
   );
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+};
+
+AuthProvider.propTypes = {
+  children: PropTypes.node.isRequired,
 };

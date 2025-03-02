@@ -1,10 +1,18 @@
-import Login from "./login/Login";
+import Login from "../login/Login";
+import Logo from "../logo/Logo";
+import ThemeSelector from "../theme/ThemeSelector";
 
 const Header = () => {
   return (
-    <header className="bg-green-200 h-24 flex">
+    <header className="bg-primary flex">
+      <div className="p-3 pl-14">
+        <Logo />
+      </div>
       <div className="flex flex-grow"></div>
-      <div className="flex flex-col items-center justify-center p-5">
+      <div className="m-5">
+        <ThemeSelector />
+      </div>
+      <div className="m-5">
         <Login />
       </div>
     </header>
