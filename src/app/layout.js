@@ -18,14 +18,13 @@ export default function RootLayout({ children }) {
       <head>
         <title>Meu Site</title>
         <meta name="description" content="Descrição do meu site" />
-        {/* Você pode adicionar outras tags <head> aqui */}
       </head>
       <body className="font-sans">
         <div className="flex flex-col min-h-screen">
           <UserProvider>
             <AuthProviders>
               <Header />
-              <main className="min-h-screen bg-gradient-to-br from-neutral-white to-accent-dark primary flex items-start p-5 justify-center">
+              <main className="min-h-screen bg-gradient-to-br from-gradient-start to-gradient-end flex items-start p-5 justify-center">
                 {children}
               </main>
               <Footer />
@@ -37,7 +36,6 @@ export default function RootLayout({ children }) {
   );
 }
 
-// Definir PropTypes
 RootLayout.propTypes = {
   children: PropTypes.node.isRequired,
 };

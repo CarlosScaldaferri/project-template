@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { useAuth } from "@/hooks/useAuth";
-import { FiEdit, FiLogOut, FiLogIn } from "react-icons/fi";
+import { FiEdit, FiLogOut, FiLogIn, FiChevronDown } from "react-icons/fi";
 import { useRouter } from "next/navigation";
 
 const Login = () => {
@@ -10,7 +10,7 @@ const Login = () => {
   const router = useRouter();
 
   const [imageSrc, setImageSrc] = useState("/img/user/default-user.png");
-  const [isHovered, setIsHovered] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
     if (user?.picture) {
@@ -26,32 +26,30 @@ const Login = () => {
     } else {
       console.error("Usuário não encontrado.");
     }
+    setIsOpen(false); // Fecha o menu após clicar
+  };
+
+  const toggleMenu = () => {
+    setIsOpen(!isOpen);
   };
 
   return (
-    <div
-      className="relative cursor-pointer"
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-    >
-      <div className="relative">
+    <div className="flex relative cursor-pointer">
+      <div className="flex flex-col items-center" onClick={toggleMenu}>
         <Image
-          className={
-            "border-t-2 rounded-full border-r-2 border-l-2 border-green-800"
-          }
+          className="rounded-full border border-spacing-1 border-primary-dark"
           src={imageSrc}
           alt="User"
-          width={64}
-          height={64}
+          width={24}
+          height={24}
         />
+        <FiChevronDown />
       </div>
-      <></>
 
-      {isHovered && (
+      {isOpen && (
         <div
           className="bg-primary-light absolute right-0 top-[calc(100%-1px)] w-56 shadow-2xl bg-white border-2 border-green-800"
-          onMouseEnter={() => setIsHovered(true)}
-          onMouseLeave={() => setIsHovered(false)}
+          onMouseLeave={() => setIsOpen(false)} // Fecha ao sair com o mouse (opcional)
         >
           <div className="py-2">
             {user ? (

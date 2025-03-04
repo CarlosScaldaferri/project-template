@@ -2,12 +2,13 @@
 import { applyCPFMask } from "@/businnes/indivisibleRules/userRules";
 import Button from "@/components/form/button/Button";
 import Form from "@/components/form/Form";
-import Image from "@/components/form/image/Image";
+import CustomImage from "@/components/form/image/CustomImage";
 import CustomInput from "@/components/form/input/CustomInput";
 import CustomSelect from "@/components/form/select/CustomSelect";
 import { useState, useEffect, useCallback } from "react";
 import { FaEdit, FaMapMarkerAlt, FaEnvelope, FaPhone } from "react-icons/fa";
-import { FiPlus, FiTrash } from "react-icons/fi";
+import { MdPerson } from "react-icons/md";
+import { FiPlus, FiTrash2 } from "react-icons/fi";
 
 export default function UserForm({ userId }) {
   const [userData, setUserData] = useState(() => ({
@@ -157,31 +158,40 @@ export default function UserForm({ userId }) {
       className="w-full max-w-3xl bg-neutral-white shadow-xl p-5"
     >
       {/* Header */}
-      <div className="bg-primary-light shadow-md p-2">
-        <h2 className="text-primary-dark flex justify-center items-center text-xl">
+      <div className="bg-primary-light text-primary-dark rounded-lg shadow-md p-2">
+        <h2 className=" flex justify-center items-center text-xl">
           <FaEdit className="mr-2" /> EDITANDO PERFIL
         </h2>
       </div>
 
       {/* Profile Section */}
-      <div className="bg-primary-light p-3 mt-4 rounded-lg shadow-md">
-        <div className="bg-neutral-white border border-neutral-light rounded-lg p-4 space-y-4">
+      <div className="bg-primary-light p-3 mt-2 rounded-lg shadow-md">
+        <div className="bg-neutral-white border border-neutral-light  rounded-lg p-4 space-y-4">
           <div className="flex space-x-4">
-            <div className="relative h-[7.7rem] border border-neutral-light rounded-lg">
-              <label htmlFor="file-upload" className="cursor-pointer group">
-                <Image
-                  src={userData.picture || "/img/user/user.png"}
-                  alt="Foto do usuário"
-                  className={`w-full h-full object-cover rounded-lg p-1 ${!userData.picture && "opacity-50"}`}
-                />
+            <div className="relative h-[7.7rem] w-fit rounded-lg">
+              <label
+                htmlFor="file-upload"
+                className="cursor-pointer group flex items-center justify-center w-full h-full"
+              >
+                {userData.picture ? (
+                  <CustomImage
+                    src={userData.picture}
+                    alt="Foto do usuário"
+                    className="object-cover p-[0.10rem] w-full h-full rounded-lg" // Usando object-cover para preencher o contêiner
+                  />
+                ) : (
+                  <MdPerson className="text-neutral-medium h-[7.7rem] w-auto  border border-neutral-medium rounded-lg" /> // Ajustando o tamanho do ícone
+                )}
+
                 {mode !== "view" && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-overlay-black opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="absolute inset-0 rounded-lg flex items-center justify-center bg-neutral-dark opacity-0 group-hover:opacity-50  transition-opacity">
                     <span className="text-neutral-white text-sm">
                       Alterar Foto
                     </span>
                   </div>
                 )}
               </label>
+
               <input
                 type="file"
                 id="file-upload"
@@ -202,6 +212,7 @@ export default function UserForm({ userId }) {
                 }}
               />
             </div>
+
             <div className="flex-1 space-y-4">
               <CustomInput
                 label="Nome"
@@ -262,14 +273,17 @@ export default function UserForm({ userId }) {
       </div>
 
       {/* Addresses Section */}
-      <div className="bg-primary-light p-3 mt-4 shadow-md rounded-lg space-y-3">
+      <div className="bg-primary-light p-3 mt-2 shadow-md rounded-lg space-y-3">
         <div className="flex items-center justify-between border border-neutral-light rounded-lg bg-neutral-white p-3">
           <div className="flex items-center">
             <FaMapMarkerAlt className="text-xl text-primary-dark mr-2" />
-            <h3 className="text-lg text-neutral-dark">ENDEREÇOS</h3>
+            <h3 className="text-lg text-primary-dark">ENDEREÇOS</h3>
           </div>
           {mode !== "view" && (
-            <FiPlus className="mr-2" onClick={() => addItem("addresses")} />
+            <FiPlus
+              className="mr-2 text-2xl text-primary-dark"
+              onClick={() => addItem("addresses")}
+            />
           )}
         </div>
         {userData.addresses.map((address, index) => (
@@ -363,8 +377,8 @@ export default function UserForm({ userId }) {
                 Este é o principal?
               </label>
               {mode !== "view" && (
-                <FiTrash
-                  className="mr-2"
+                <FiTrash2
+                  className="mr-2 text-2xl text-primary-dark"
                   onClick={() => removeItem("addresses", index)}
                 />
               )}
@@ -374,14 +388,17 @@ export default function UserForm({ userId }) {
       </div>
 
       {/* Emails Section */}
-      <div className="bg-primary-light p-3 mt-4 shadow-md space-y-3 rounded-lg">
+      <div className="bg-primary-light p-3 mt-2 shadow-md space-y-3 rounded-lg">
         <div className="flex items-center justify-between bg-neutral-white p-3 border border-neutral-light rounded-lg">
           <div className="flex items-center">
             <FaEnvelope className="text-xl text-primary-dark mr-2" />
-            <h3 className="text-lg text-neutral-dark">E-MAILS</h3>
+            <h3 className="text-lg text-primary-dark">E-MAILS</h3>
           </div>
           {mode !== "view" && (
-            <FiPlus className="mr-2" onClick={() => addItem("emails")} />
+            <FiPlus
+              className="mr-2 text-2xl text-primary-dark"
+              onClick={() => addItem("emails")}
+            />
           )}
         </div>
         {userData.emails.map((email, index) => (
@@ -408,8 +425,8 @@ export default function UserForm({ userId }) {
                 Este é o principal?
               </label>
               {mode !== "view" && (
-                <FiTrash
-                  className="mr-2"
+                <FiTrash2
+                  className="mr-2 text-2xl text-primary-dark"
                   onClick={() => removeItem("emails", index)}
                 />
               )}
@@ -419,14 +436,17 @@ export default function UserForm({ userId }) {
       </div>
 
       {/* Phones Section */}
-      <div className="bg-primary-light p-3 mt-4 shadow-md space-y-3 rounded-lg">
+      <div className="bg-primary-light p-3 mt-2 shadow-md space-y-3 rounded-lg">
         <div className="flex items-center justify-between bg-neutral-white p-3 border border-neutral-light rounded-lg">
           <div className="flex items-center">
             <FaPhone className="text-xl text-primary-dark mr-2" />
-            <h3 className="text-lg text-neutral-dark">TELEFONES</h3>
+            <h3 className="text-lg text-primary-dark">TELEFONES</h3>
           </div>
           {mode !== "view" && (
-            <FiPlus className="mr-2" onClick={() => addItem("phones")} />
+            <FiPlus
+              className="mr-2 text-2xl text-primary-dark"
+              onClick={() => addItem("phones")}
+            />
           )}
         </div>
         {userData.phones.map((phone, index) => (
@@ -453,8 +473,8 @@ export default function UserForm({ userId }) {
                 Este é o principal?
               </label>
               {mode !== "view" && (
-                <FiTrash
-                  className="mr-2"
+                <FiTrash2
+                  className="mr-2 text-2xl text-primary-dark"
                   onClick={() => removeItem("phones", index)}
                 />
               )}

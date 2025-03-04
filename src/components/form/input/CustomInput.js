@@ -7,11 +7,11 @@ export default function CustomInput({ label, className = "", ...props }) {
 
   return (
     <div
-      className={`relative w-full ${isCheckbox ? "flex items-center justify-end gap-2" : ""}`}
+      className={`relative w-full bg-none ${isCheckbox ? "flex items-center justify-end gap-2" : ""}`}
     >
       <input
         id="input-field"
-        className={`peer border border-neutral-light focus:outline-none focus:ring-2 focus:ring-focus box-border ${isCheckbox ? "w-5 h-5" : "w-full px-3 pt-5 pb-2 rounded-md text-base text-neutral-dark"} ${className}`}
+        className={`peer bg-neutral-white border border-neutral-medium focus:outline-none focus:border-none focus:ring-2 focus:ring-focus focus:ring-primary-default box-border ${isCheckbox ? "w-5 h-5" : "w-full px-3 pt-5 pb-2 rounded-md text-base text-neutral-dark"} ${className}`}
         placeholder={isCheckbox ? undefined : " "}
         onChange={(e) => {
           setHasValue(e.target.value.trim() !== "");
@@ -22,7 +22,7 @@ export default function CustomInput({ label, className = "", ...props }) {
       />
       <label
         htmlFor="input-field"
-        className={`transition-all ${isCheckbox ? "text-base text-neutral-dark" : "absolute left-3 bg-neutral-white"} ${hasValue ? "-top-2 text-sm text-neutral-dark" : "top-5 text-base text-neutral-medium"} peer-focus:-top-2 peer-focus:text-sm peer-focus:text-neutral-dark`}
+        className={`transition-all bg-neutral-white ${isCheckbox ? "text-base text-neutral-medium" : "absolute left-3"} ${hasValue ? "-top-2 text-sm text-neutral-dark" : "top-5 text-base text-neutral-medium"} peer-focus:-top-2 peer-focus:text-sm peer-focus:text-neutral-dark`}
       >
         {label}
       </label>

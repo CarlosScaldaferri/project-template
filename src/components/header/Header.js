@@ -4,15 +4,14 @@ import ThemeSelector from "../theme/ThemeSelector";
 
 const Header = () => {
   return (
-    <header className="bg-primary flex">
+    <header className="bg-gradient-to-br from-secondary-default to-neutral-white flex border-b border-spacing-2 border-secondary-dark">
       <div className="p-3 pl-14">
         <Logo />
       </div>
       <div className="flex flex-grow"></div>
-      <div className="m-5">
+      <div className="flex space-x-5 mr-5 mt-2">
         <ThemeSelector />
-      </div>
-      <div className="m-5">
+
         <Login />
       </div>
     </header>

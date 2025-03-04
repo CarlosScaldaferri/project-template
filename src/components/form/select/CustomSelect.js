@@ -23,7 +23,7 @@ const CustomSelect = ({
         }}
         onBlur={(e) => setHasValue(e.target.value.trim() !== "")}
         disabled={disabled}
-        className={`peer border border-neutral-light focus:outline-none focus:ring-2 focus:ring-focus box-border w-full px-3 pt-5 pb-2 rounded-md text-base text-neutral-dark ${className}`}
+        className={`peer bg-neutral-white border border-neutral-medium focus:outline-none focus:ring-2 focus:ring-focus focus:ring-primary-default box-border w-full px-3 pt-5 pb-2 rounded-md text-base text-neutral-dark ${className}`}
       >
         {options.map((option) => (
           <option key={option.value} value={option.value}>

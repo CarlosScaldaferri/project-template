@@ -1,17 +1,17 @@
 import PropTypes from "prop-types";
 
-export default function Image({ src, alt, className, ...props }) {
+export default function CustomImage({ src, alt, className = "", ...props }) {
   return (
     <img
       src={src}
       alt={alt}
-      className={`object-cover ${className}`}
+      className={`object-cover rounded-md ${className}`}
       {...props}
     />
   );
 }
 
-Image.propTypes = {
+CustomImage.propTypes = {
   src: PropTypes.string.isRequired,
   alt: PropTypes.string.isRequired,
   className: PropTypes.string,
