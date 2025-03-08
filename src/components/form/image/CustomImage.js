@@ -5,7 +5,7 @@ export default function CustomImage({ src, alt, className = "", ...props }) {
     <img
       src={src}
       alt={alt}
-      className={`object-cover rounded-md ${className}`}
+      className={`object-cover bg-light-background-sidebar dark:bg-dark-background-sidebar ${className}`}
       {...props}
     />
   );

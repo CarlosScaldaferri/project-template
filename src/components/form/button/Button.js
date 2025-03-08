@@ -8,11 +8,11 @@ export default function Button({
 }) {
   const variants = {
     primary:
-      "bg-primary-default text-neutral-white hover:bg-primary-dark focus:ring-focus-default",
+      "bg-light-primary dark:bg-dark-primary text-white hover:bg-light-primary-dark dark:hover:bg-dark-primary-dark focus:ring-light-primary dark:focus:ring-dark-primary",
     secondary:
-      "bg-secondary-default text-neutral-white hover:bg-secondary-dark focus:ring-focus-default",
+      "bg-light-secondary dark:bg-dark-secondary text-white hover:bg-light-secondary-dark dark:hover:bg-dark-secondary-dark focus:ring-light-secondary dark:focus:ring-dark-secondary",
     danger:
-      "bg-danger-default text-neutral-white hover:bg-danger-dark focus:ring-focus-default",
+      "bg-light-danger dark:bg-dark-danger text-white hover:bg-light-danger-dark dark:hover:bg-dark-danger-dark focus:ring-light-danger dark:focus:ring-dark-danger",
   };
 
   return (

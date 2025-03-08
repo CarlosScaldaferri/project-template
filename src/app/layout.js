@@ -1,11 +1,13 @@
 import PropTypes from "prop-types";
 import AuthProviders from "@/utils/AuthProviders";
 import "./globals.css";
-import Header from "@/components/header/Header";
-import Footer from "@/components/footer/Footer";
 import { UserProvider } from "@auth0/nextjs-auth0/client";
-import Logo from "@/components/logo/Logo";
-import Login from "@/components/login/Login";
+import { SidebarProvider } from "@/contexts/SidebarContext";
+import Sidebar from "@/components/sideBar/SideBar";
+import MainProvider from "@/utils/MainProvider";
+import Header from "@/components/header/Header";
+import { HeaderProvider } from "@/contexts/HeaderContext";
+import ClientWrapper from "@/utils/ClientWrapper";
 
 export const metadata = {
   title: "Create Next App",
@@ -18,16 +20,34 @@ export default function RootLayout({ children }) {
       <head>
         <title>Meu Site</title>
         <meta name="description" content="Descrição do meu site" />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              const theme = localStorage.getItem('theme');
+              if (theme === 'dark') {
+                document.documentElement.classList.add('dark');
+              } else {
+                document.documentElement.classList.remove('dark');
+              }
+            `,
+          }}
+        />
       </head>
-      <body className="font-sans">
-        <div className="flex flex-col min-h-screen">
+      <body className="font-sans bg-light-background dark:bg-dark-background text-light-text dark:text-dark-text">
+        <div className="flex min-h-screen">
           <UserProvider>
             <AuthProviders>
-              <Header />
-              <main className="min-h-screen bg-gradient-to-br from-gradient-start to-gradient-end flex items-start p-5 justify-center">
-                {children}
-              </main>
-              <Footer />
+              <HeaderProvider>
+                <SidebarProvider>
+                  <ClientWrapper>
+                    <Sidebar />
+                    <div className="flex flex-col">
+                      <Header />
+                      <MainProvider>{children}</MainProvider>
+                    </div>
+                  </ClientWrapper>
+                </SidebarProvider>
+              </HeaderProvider>
             </AuthProviders>
           </UserProvider>
         </div>

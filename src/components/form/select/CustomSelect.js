@@ -13,6 +13,14 @@ const CustomSelect = ({
 
   return (
     <div className="relative">
+      <label
+        htmlFor={`input-${label}`}
+        className={`text-base text-light-primary dark:text-dark-primary 
+          ${hasValue && "text-light-primary dark:text-dark-primary"}
+          transition-colors duration-200 ease-in-out`}
+      >
+        {label}
+      </label>
       <select
         id="select-field"
         name={name}
@@ -23,7 +31,20 @@ const CustomSelect = ({
         }}
         onBlur={(e) => setHasValue(e.target.value.trim() !== "")}
         disabled={disabled}
-        className={`peer bg-neutral-white border border-neutral-medium focus:outline-none focus:ring-2 focus:ring-focus focus:ring-primary-default box-border w-full px-3 pt-5 pb-2 rounded-md text-base text-neutral-dark ${className}`}
+        className={`
+          w-full px-4 py-2 text-base
+          bg-light-background-sidebar dark:bg-dark-background-sidebar
+          text-light-text dark:text-dark-text
+          border border-light-border dark:border-dark-border
+          rounded-md
+          focus:border-light-primary dark:focus:border-dark-primary
+          focus:ring-2 focus:ring-light-primary dark:focus:ring-dark-primary
+          focus:outline-none
+          transition-all duration-200 ease-in-out
+          disabled:bg-light-muted dark:disabled:bg-dark-muted
+          disabled:cursor-not-allowed
+          ${className}
+        `}
       >
         {options.map((option) => (
           <option key={option.value} value={option.value}>
@@ -31,12 +52,6 @@ const CustomSelect = ({
           </option>
         ))}
       </select>
-      <label
-        htmlFor="select-field"
-        className={`transition-all absolute left-3 bg-neutral-white ${hasValue ? "-top-2 text-sm text-neutral-dark" : "top-5 text-base text-neutral-medium"} peer-focus:-top-2 peer-focus:text-sm peer-focus:text-neutral-dark`}
-      >
-        {label}
-      </label>
     </div>
   );
 };

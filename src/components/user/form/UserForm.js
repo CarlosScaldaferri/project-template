@@ -1,14 +1,22 @@
 "use client";
+
 import { applyCPFMask } from "@/businnes/indivisibleRules/userRules";
 import Button from "@/components/form/button/Button";
 import Form from "@/components/form/Form";
 import CustomImage from "@/components/form/image/CustomImage";
 import CustomInput from "@/components/form/input/CustomInput";
 import CustomSelect from "@/components/form/select/CustomSelect";
+import { useHeader } from "@/contexts/HeaderContext";
 import { useState, useEffect, useCallback } from "react";
-import { FaEdit, FaMapMarkerAlt, FaEnvelope, FaPhone } from "react-icons/fa";
+import {
+  FaPlus,
+  FaEdit,
+  FaMapMarkerAlt,
+  FaEnvelope,
+  FaPhone,
+} from "react-icons/fa";
+import { FiTrash2 } from "react-icons/fi";
 import { MdPerson } from "react-icons/md";
-import { FiPlus, FiTrash2 } from "react-icons/fi";
 
 export default function UserForm({ userId }) {
   const [userData, setUserData] = useState(() => ({
@@ -152,147 +160,121 @@ export default function UserForm({ userId }) {
     [userData]
   );
 
+  const { setHeaderConfig } = useHeader();
+
+  useEffect(() => {
+    setHeaderConfig({
+      title: "Novo Usuário",
+      subtitle: "Preencha os dados abaixo para criar o perfil",
+      icon: FaEdit,
+    });
+  }, []);
+
   return (
-    <Form
-      onSubmit={handleSubmit}
-      className="w-full max-w-3xl bg-neutral-white shadow-xl p-5"
-    >
-      {/* Header */}
-      <div className="bg-primary-light text-primary-dark rounded-lg shadow-md p-2">
-        <h2 className=" flex justify-center items-center text-xl">
-          <FaEdit className="mr-2" /> EDITANDO PERFIL
-        </h2>
-      </div>
-
-      {/* Profile Section */}
-      <div className="bg-primary-light p-3 mt-2 rounded-lg shadow-md">
-        <div className="bg-neutral-white border border-neutral-light  rounded-lg p-4 space-y-4">
-          <div className="flex space-x-4">
-            <div className="relative h-[7.7rem] w-fit rounded-lg">
-              <label
-                htmlFor="file-upload"
-                className="cursor-pointer group flex items-center justify-center w-full h-full"
-              >
-                {userData.picture ? (
-                  <CustomImage
-                    src={userData.picture}
-                    alt="Foto do usuário"
-                    className="object-cover p-[0.10rem] w-full h-full rounded-lg" // Usando object-cover para preencher o contêiner
-                  />
-                ) : (
-                  <MdPerson className="text-neutral-medium h-[7.7rem] w-auto  border border-neutral-medium rounded-lg" /> // Ajustando o tamanho do ícone
-                )}
-
-                {mode !== "view" && (
-                  <div className="absolute inset-0 rounded-lg flex items-center justify-center bg-neutral-dark opacity-0 group-hover:opacity-50  transition-opacity">
-                    <span className="text-neutral-white text-sm">
-                      Alterar Foto
-                    </span>
-                  </div>
-                )}
-              </label>
-
+    <Form onSubmit={handleSubmit} className="w-full">
+      <main className="p-6 space-y-8 bg-light-background-form-primary dark:bg-dark-background-form-primary">
+        <section className="border border-light-border dark:border-dark-border">
+          <h2 className="flex items-center p-6 gap-2 border-b text-lg font-semibold border-light-border dark:border-dark-border bg-light-background-form-secondary dark:bg-dark-background-form-secondary">
+            <MdPerson className="w-8 h-8" /> Informações Pessoais
+          </h2>
+          <div className="p-6 space-y-6">
+            <label className="relative w-32 h-32 block group shrink-0 border border-light-border dark:border-dark-border bg-light-background-form-secondary dark:bg-dark-background-form-secondary rounded-md">
+              {userData.picture ? (
+                <CustomImage
+                  src={userData.picture}
+                  alt="Foto do usuário"
+                  className="w-full h-full object-cover rounded-md"
+                />
+              ) : (
+                <MdPerson className="w-[7.9rem] h-[7.9rem] text-light-background dark:text-dark-background bg-light-background-sidebar dark:bg-dark-background-sidebar rounded-md" />
+              )}
+              {mode !== "view" && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-md">
+                  <span className="font-medium text-white">Alterar</span>
+                </div>
+              )}
               <input
                 type="file"
-                id="file-upload"
                 className="hidden"
                 accept="image/*"
                 disabled={mode === "view"}
                 onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) {
-                    const reader = new FileReader();
-                    reader.onloadend = () =>
-                      setUserData((prev) => ({
-                        ...prev,
-                        picture: reader.result,
-                      }));
-                    reader.readAsDataURL(file);
-                  }
+                  /* ... */
                 }}
               />
-            </div>
-
-            <div className="flex-1 space-y-4">
-              <CustomInput
-                label="Nome"
-                name="name"
-                value={userData.name}
-                onChange={handleChange}
-                disabled={mode === "view"}
-              />
-              <CustomInput
-                label="Apelido"
-                name="nickname"
-                value={userData.nickname}
-                onChange={handleChange}
-                disabled={mode === "view"}
-              />
-            </div>
-          </div>
-
-          <div className="flex flex-wrap gap-4">
-            <div className="flex-1 min-w-[200px]">
-              <CustomInput
-                label="Data de Nascimento"
-                name="birth_date"
-                type="date"
-                value={userData.birth_date}
-                onChange={handleChange}
-                disabled={mode === "view"}
-              />
-            </div>
-            <div className="flex-1 min-w-[200px]">
-              <CustomInput
-                label="CPF"
-                name="cpf"
-                value={userData.cpf}
-                onChange={handleCpfChange}
-                disabled={mode === "view"}
-                maxLength={14}
-              />
-            </div>
-            <div className="flex-1 min-w-[200px]">
-              <CustomSelect
-                label="Gênero"
-                name="gender"
-                value={userData.gender}
-                onChange={handleChange}
-                disabled={mode === "view"}
-                options={[
-                  { value: "", label: "" },
-                  { value: "masculino", label: "Masculino" },
-                  { value: "feminino", label: "Feminino" },
-                  { value: "outro", label: "Outro" },
-                  { value: "prefiro_nao_dizer", label: "Prefiro não dizer" },
-                ]}
-              />
+            </label>
+            <div className="flex flex-col sm:flex-row gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
+                <CustomInput
+                  label="Nome"
+                  name="name"
+                  value={userData.name}
+                  onChange={handleChange}
+                  disabled={mode === "view"}
+                />
+                <CustomInput
+                  label="Apelido"
+                  name="nickname"
+                  value={userData.nickname}
+                  onChange={handleChange}
+                  disabled={mode === "view"}
+                />
+                <CustomInput
+                  label="Data de Nascimento"
+                  type="date"
+                  name="birth_date"
+                  value={userData.birth_date}
+                  onChange={handleChange}
+                  disabled={mode === "view"}
+                />
+                <CustomInput
+                  label="CPF"
+                  name="cpf"
+                  value={userData.cpf}
+                  onChange={handleCpfChange}
+                  disabled={mode === "view"}
+                  maxLength={14}
+                />
+                <CustomSelect
+                  label="Gênero"
+                  name="gender"
+                  value={userData.gender}
+                  onChange={handleChange}
+                  disabled={mode === "view"}
+                  options={[
+                    { value: "", label: "" },
+                    { value: "masculino", label: "Masculino" },
+                    { value: "feminino", label: "Feminino" },
+                    { value: "outro", label: "Outro" },
+                    { value: "prefiro_nao_dizer", label: "Prefiro não dizer" },
+                  ]}
+                />
+              </div>
             </div>
           </div>
-        </div>
-      </div>
+        </section>
 
-      {/* Addresses Section */}
-      <div className="bg-primary-light p-3 mt-2 shadow-md rounded-lg space-y-3">
-        <div className="flex items-center justify-between border border-neutral-light rounded-lg bg-neutral-white p-3">
-          <div className="flex items-center">
-            <FaMapMarkerAlt className="text-xl text-primary-dark mr-2" />
-            <h3 className="text-lg text-primary-dark">ENDEREÇOS</h3>
+        <section className="space-y-4 border-t border-l border-r border-light-border dark:border-dark-border">
+          <div className="flex items-center justify-between p-6 border-b border-light-border dark:border-dark-border bg-light-background-form-secondary dark:bg-dark-background-form-secondary">
+            <h2 className="text-lg font-semibold flex items-center gap-2 text-light-text dark:text-dark-text">
+              <FaMapMarkerAlt className="w-6 h-6" /> Endereços
+            </h2>
+            {mode !== "view" && (
+              <button
+                type="button"
+                onClick={() => addItem("addresses")}
+                className="flex items-center gap-1 text-light-accent dark:text-dark-accent hover:text-light-primary dark:hover:text-dark-primary"
+              >
+                <FaPlus />
+              </button>
+            )}
           </div>
-          {mode !== "view" && (
-            <FiPlus
-              className="mr-2 text-2xl text-primary-dark"
-              onClick={() => addItem("addresses")}
-            />
-          )}
-        </div>
-        {userData.addresses.map((address, index) => (
-          <div
-            key={address.id}
-            className="bg-neutral-white p-3 space-y-3 border border-neutral-light rounded-lg"
-          >
-            <div className="flex flex-wrap gap-3">
-              <div className="flex-1 min-w-[150px]">
+          {userData.addresses.map((address, index) => (
+            <div
+              key={address.id}
+              className="pb-5 pl-5 pr-5 bg-light-background-secondary dark:bg-dark-background-secondary border-b border-light-border dark:border-dark-border"
+            >
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <CustomInput
                   label="CEP"
                   name="zip_code"
@@ -300,8 +282,6 @@ export default function UserForm({ userId }) {
                   onChange={(e) => handleChange(e, index, "addresses")}
                   disabled={mode === "view"}
                 />
-              </div>
-              <div className="flex-1 min-w-[200px]">
                 <CustomInput
                   label="Rua/Avenida"
                   name="street"
@@ -309,8 +289,6 @@ export default function UserForm({ userId }) {
                   onChange={(e) => handleChange(e, index, "addresses")}
                   disabled={mode === "view"}
                 />
-              </div>
-              <div className="flex-1 min-w-[100px]">
                 <CustomInput
                   label="Número"
                   name="number"
@@ -318,8 +296,6 @@ export default function UserForm({ userId }) {
                   onChange={(e) => handleChange(e, index, "addresses")}
                   disabled={mode === "view"}
                 />
-              </div>
-              <div className="flex-1 min-w-[150px]">
                 <CustomInput
                   label="Complemento"
                   name="complement"
@@ -327,8 +303,6 @@ export default function UserForm({ userId }) {
                   onChange={(e) => handleChange(e, index, "addresses")}
                   disabled={mode === "view"}
                 />
-              </div>
-              <div className="flex-1 min-w-[150px]">
                 <CustomInput
                   label="Bairro"
                   name="neighborhood"
@@ -336,8 +310,6 @@ export default function UserForm({ userId }) {
                   onChange={(e) => handleChange(e, index, "addresses")}
                   disabled={mode === "view"}
                 />
-              </div>
-              <div className="flex-1 min-w-[150px]">
                 <CustomInput
                   label="Cidade"
                   name="city"
@@ -345,8 +317,6 @@ export default function UserForm({ userId }) {
                   onChange={(e) => handleChange(e, index, "addresses")}
                   disabled={mode === "view"}
                 />
-              </div>
-              <div className="flex-1 min-w-[100px]">
                 <CustomInput
                   label="Estado"
                   name="state"
@@ -354,8 +324,6 @@ export default function UserForm({ userId }) {
                   onChange={(e) => handleChange(e, index, "addresses")}
                   disabled={mode === "view"}
                 />
-              </div>
-              <div className="flex-1 min-w-[150px]">
                 <CustomInput
                   label="País"
                   name="country"
@@ -364,135 +332,148 @@ export default function UserForm({ userId }) {
                   disabled={mode === "view"}
                 />
               </div>
-            </div>
-            <div className="flex flex-col items-end space-y-3 whitespace-nowrap text-neutral-medium">
-              <label className="flex items-center">
+              <div className="grid grid-cols-2 gap-4 mt-4">
                 <CustomInput
                   type="checkbox"
-                  name="is_main"
                   checked={address.is_main}
                   onChange={() => handleMainToggle("addresses", index)}
                   disabled={mode === "view"}
+                  label={`Principal`}
                 />
-                Este é o principal?
-              </label>
-              {mode !== "view" && (
-                <FiTrash2
-                  className="mr-2 text-2xl text-primary-dark"
-                  onClick={() => removeItem("addresses", index)}
-                />
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
 
-      {/* Emails Section */}
-      <div className="bg-primary-light p-3 mt-2 shadow-md space-y-3 rounded-lg">
-        <div className="flex items-center justify-between bg-neutral-white p-3 border border-neutral-light rounded-lg">
-          <div className="flex items-center">
-            <FaEnvelope className="text-xl text-primary-dark mr-2" />
-            <h3 className="text-lg text-primary-dark">E-MAILS</h3>
+                {mode !== "view" && (
+                  <div className="flex justify-end">
+                    <button
+                      type="button"
+                      onClick={() => removeItem("addresses", index)}
+                      className="text-light-danger dark:text-dark-danger hover:text-light-danger-dark dark:hover:text-dark-danger-dark"
+                    >
+                      <FiTrash2 />
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </section>
+
+        <section className="space-y-4 border-t border-l border-r border-light-border dark:border-dark-border">
+          <div className="flex items-center justify-between p-6 border-b border-light-border dark:border-dark-border bg-light-background-form-secondary dark:bg-dark-background-form-secondary">
+            <h2 className="text-lg font-semibold flex items-center gap-2 text-light-text dark:text-dark-text">
+              <FaEnvelope className="w-6 h-6" /> E-mails
+            </h2>
+            {mode !== "view" && (
+              <button
+                type="button"
+                onClick={() => addItem("emails")}
+                className="flex items-center gap-1 text-light-accent dark:text-dark-accent hover:text-light-primary dark:hover:text-dark-primary"
+              >
+                <FaPlus />
+              </button>
+            )}
           </div>
-          {mode !== "view" && (
-            <FiPlus
-              className="mr-2 text-2xl text-primary-dark"
-              onClick={() => addItem("emails")}
-            />
-          )}
-        </div>
-        {userData.emails.map((email, index) => (
-          <div
-            key={email.id}
-            className="bg-neutral-white p-3 space-y-3 border border-neutral-light rounded-lg"
-          >
-            <CustomInput
-              label="E-mail"
-              name="email"
-              value={email.email}
-              onChange={(e) => handleChange(e, index, "emails")}
-              disabled={mode === "view"}
-            />
-            <div className="flex flex-col items-end space-y-3 whitespace-nowrap text-neutral-medium">
-              <label className="flex items-center">
+          {userData.emails.map((email, index) => (
+            <div
+              key={email.id}
+              className="pb-5 pl-5 pr-5 space-y-4 bg-light-background-secondary dark:bg-dark-background-secondary border-b border-light-border dark:border-dark-border"
+            >
+              <div className="grid grid-cols-1 gap-4">
+                <CustomInput
+                  label="E-mail"
+                  name="email"
+                  value={email.email}
+                  onChange={(e) => handleChange(e, index, "emails")}
+                  disabled={mode === "view"}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
                 <CustomInput
                   type="checkbox"
-                  name="is_main"
                   checked={email.is_main}
                   onChange={() => handleMainToggle("emails", index)}
                   disabled={mode === "view"}
+                  label={`Principal`}
                 />
-                Este é o principal?
-              </label>
-              {mode !== "view" && (
-                <FiTrash2
-                  className="mr-2 text-2xl text-primary-dark"
-                  onClick={() => removeItem("emails", index)}
-                />
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
 
-      {/* Phones Section */}
-      <div className="bg-primary-light p-3 mt-2 shadow-md space-y-3 rounded-lg">
-        <div className="flex items-center justify-between bg-neutral-white p-3 border border-neutral-light rounded-lg">
-          <div className="flex items-center">
-            <FaPhone className="text-xl text-primary-dark mr-2" />
-            <h3 className="text-lg text-primary-dark">TELEFONES</h3>
+                {mode !== "view" && (
+                  <div className="flex justify-end">
+                    <button
+                      type="button"
+                      onClick={() => removeItem("emails", index)}
+                      className="text-light-danger dark:text-dark-danger hover:text-light-danger-dark dark:hover:text-dark-danger-dark"
+                    >
+                      <FiTrash2 />
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </section>
+
+        <section className="space-y-4 border-t border-l border-r border-light-border dark:border-dark-border">
+          <div className="flex items-center justify-between p-6 border-b border-light-border dark:border-dark-border bg-light-background-form-secondary dark:bg-dark-background-form-secondary">
+            <h2 className="text-lg font-semibold flex items-center gap-2 text-light-text dark:text-dark-text">
+              <FaPhone className="w-6 h-6" /> Telefones
+            </h2>
+            {mode !== "view" && (
+              <button
+                type="button"
+                onClick={() => addItem("phones")}
+                className="flex items-center gap-1 text-light-accent dark:text-dark-accent hover:text-light-primary dark:hover:text-dark-primary"
+              >
+                <FaPlus />
+              </button>
+            )}
           </div>
-          {mode !== "view" && (
-            <FiPlus
-              className="mr-2 text-2xl text-primary-dark"
-              onClick={() => addItem("phones")}
-            />
-          )}
-        </div>
-        {userData.phones.map((phone, index) => (
-          <div
-            key={phone.id}
-            className="bg-neutral-white p-3 space-y-3 border border-neutral-light rounded-lg"
-          >
-            <CustomInput
-              label="Telefone"
-              name="phone"
-              value={phone.phone}
-              onChange={(e) => handleChange(e, index, "phones")}
-              disabled={mode === "view"}
-            />
-            <div className="flex flex-col items-end space-y-3 whitespace-nowrap text-neutral-medium">
-              <label className="flex items-center">
+          {userData.phones.map((phone, index) => (
+            <div
+              key={phone.id}
+              className="pb-5 pl-5 pr-5 space-y-4 bg-light-background-secondary dark:bg-dark-background-secondary border-b border-light-border dark:border-dark-border"
+            >
+              <div className="grid grid-cols-1 gap-4">
+                <CustomInput
+                  label="Telefone"
+                  name="phone"
+                  value={phone.phone}
+                  onChange={(e) => handleChange(e, index, "phones")}
+                  disabled={mode === "view"}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
                 <CustomInput
                   type="checkbox"
-                  name="is_main"
                   checked={phone.is_main}
                   onChange={() => handleMainToggle("phones", index)}
                   disabled={mode === "view"}
+                  label={`Principal`}
                 />
-                Este é o principal?
-              </label>
-              {mode !== "view" && (
-                <FiTrash2
-                  className="mr-2 text-2xl text-primary-dark"
-                  onClick={() => removeItem("phones", index)}
-                />
-              )}
+                {mode !== "view" && (
+                  <div className="flex justify-end">
+                    <button
+                      type="button"
+                      onClick={() => removeItem("phones", index)}
+                      className="text-light-danger dark:text-dark-danger hover:text-light-danger-dark dark:hover:text-dark-danger-dark"
+                    >
+                      <FiTrash2 />
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </section>
+      </main>
 
-      {/* Form Actions */}
       {mode !== "view" && (
-        <div className="flex justify-end gap-4 mt-4">
-          <Button type="submit" variant="primary">
-            Salvar
-          </Button>
+        <footer className="p-6 flex justify-end gap-4 border-t border-light-border dark:border-dark-border bg-light-background-form-secondary dark:bg-dark-background-form-secondary transition-all duration-300">
           <Button type="button" variant="secondary">
             Cancelar
           </Button>
-        </div>
+          <Button type="submit" variant="primary">
+            Salvar
+          </Button>
+        </footer>
       )}
     </Form>
   );

@@ -29,7 +29,7 @@ export default function Form({ onSubmit, children, className }) {
   return (
     <form
       onSubmit={handleSubmit}
-      className={`flex flex-col gap-4 ${className}`}
+      className={`flex flex-col border-r border-light-border dark:border-dark-border ${className}`}
     >
       {React.Children.map(children, (child) => {
         if (React.isValidElement(child) && child.props.name) {
