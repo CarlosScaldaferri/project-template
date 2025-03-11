@@ -5,7 +5,7 @@ export default function CustomImage({ src, alt, className = "", ...props }) {
     <img
       src={src}
       alt={alt}
-      className={`object-cover bg-light-background-sidebar dark:bg-dark-background-sidebar ${className}`}
+      className={`object-cover border border-light-border dark:border-dark-border rounded-md bg-light-background-sidebar dark:bg-dark-background-sidebar ${className}`}
       {...props}
     />
   );

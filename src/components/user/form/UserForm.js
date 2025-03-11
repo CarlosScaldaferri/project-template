@@ -3,50 +3,34 @@
 import { applyCPFMask } from "@/businnes/indivisibleRules/userRules";
 import Button from "@/components/form/button/Button";
 import Form from "@/components/form/Form";
-import CustomImage from "@/components/form/image/CustomImage";
 import CustomInput from "@/components/form/input/CustomInput";
 import CustomSelect from "@/components/form/select/CustomSelect";
 import { useHeader } from "@/contexts/HeaderContext";
 import { useState, useEffect, useCallback } from "react";
 import {
-  FaPlus,
   FaEdit,
   FaMapMarkerAlt,
   FaEnvelope,
   FaPhone,
+  FaImage,
 } from "react-icons/fa";
-import { FiTrash2 } from "react-icons/fi";
 import { MdPerson } from "react-icons/md";
 import * as Yup from "yup";
 import { userSchema } from "@/schemas/userSchema";
+import SubForm from "@/components/form/subForm/SubForm";
 
 export default function UserForm({ userId }) {
-  const [userData, setUserData] = useState(() => ({
+  const [userData, setUserData] = useState({
     name: "",
     nickname: "",
-    picture: "",
+    pictures: [], // Changed from picture to pictures array
     birth_date: "",
     cpf: "",
     gender: "",
-    addresses: [
-      {
-        id: Date.now(),
-        zip_code: "",
-        street: "",
-        number: "",
-        complement: "",
-        neighborhood: "",
-        city: "",
-        state: "",
-        country: "",
-        is_main: false,
-      },
-    ],
-    emails: [
-      { id: Date.now(), email: "", is_main: false, email_verified: false },
-    ],
-    phones: [{ id: Date.now(), phone: "", is_main: false }],
-  }));
+    addresses: [],
+    emails: [],
+    phones: [],
+  });
   const [mode, setMode] = useState("create");
   const [errors, setErrors] = useState({});
 
@@ -97,7 +81,7 @@ export default function UserForm({ userId }) {
       const newErrors = { ...prev };
       if (!hasMain) {
         newErrors[field] =
-          `Pelo menos um ${field === "addresses" ? "endereço" : field === "emails" ? "e-mail" : "telefone"} deve ser marcado como principal`;
+          `Pelo menos um ${field === "addresses" ? "endereço" : field === "emails" ? "e-mail" : field === "phones" ? "telefone" : "imagem"} deve ser marcado como principal`;
       } else {
         delete newErrors[field];
       }
@@ -106,33 +90,14 @@ export default function UserForm({ userId }) {
   }, []);
 
   const handleChange = useCallback(
-    (e, index, field) => {
+    (e) => {
       const { name, value, type, checked } = e.target;
-      let updatedData;
-
-      if (field && typeof index === "number") {
-        updatedData = {
-          ...userData,
-          [field]: userData[field].map((item, i) =>
-            i === index
-              ? { ...item, [name]: type === "checkbox" ? checked : value }
-              : item
-          ),
-        };
-        setUserData(updatedData);
-        validateField(
-          `${field}[${index}].${name}`,
-          type === "checkbox" ? checked : value,
-          updatedData
-        );
-      } else {
-        updatedData = {
-          ...userData,
-          [name]: type === "checkbox" ? checked : value,
-        };
-        setUserData(updatedData);
-        validateField(name, type === "checkbox" ? checked : value, updatedData);
-      }
+      const updatedData = {
+        ...userData,
+        [name]: type === "checkbox" ? checked : value,
+      };
+      setUserData(updatedData);
+      validateField(name, type === "checkbox" ? checked : value, updatedData);
     },
     [userData, validateField]
   );
@@ -147,72 +112,9 @@ export default function UserForm({ userId }) {
     [userData, validateField]
   );
 
-  const createEmptyAddress = () => ({
-    id: Date.now(),
-    zip_code: "",
-    street: "",
-    number: "",
-    complement: "",
-    neighborhood: "",
-    city: "",
-    state: "",
-    country: "",
-    is_main: false,
-  });
-
-  const createEmptyEmail = () => ({
-    id: Date.now(),
-    email: "",
-    is_main: false,
-    email_verified: false,
-  });
-
-  const createEmptyPhone = () => ({
-    id: Date.now(),
-    phone: "",
-    is_main: false,
-  });
-
-  const addItem = useCallback(
-    (field) => {
-      const updatedData = {
-        ...userData,
-        [field]: [
-          ...userData[field],
-          field === "addresses"
-            ? createEmptyAddress()
-            : field === "emails"
-              ? createEmptyEmail()
-              : createEmptyPhone(),
-        ],
-      };
-      setUserData(updatedData);
-      checkMainItems(field, updatedData); // Verifica após adicionar
-    },
-    [userData, checkMainItems]
-  );
-
-  const removeItem = useCallback(
-    (field, index) => {
-      const updatedData = {
-        ...userData,
-        [field]: userData[field].filter((_, i) => i !== index),
-      };
-      setUserData(updatedData);
-      checkMainItems(field, updatedData); // Verifica após remover
-    },
-    [userData, checkMainItems]
-  );
-
-  const handleMainToggle = useCallback(
-    (field, index) => {
-      const updatedData = {
-        ...userData,
-        [field]: userData[field].map((item, i) => ({
-          ...item,
-          is_main: i === index ? !item.is_main : false,
-        })),
-      };
+  const handleContextSave = useCallback(
+    (field) => (items) => {
+      const updatedData = { ...userData, [field]: items };
       setUserData(updatedData);
       checkMainItems(field, updatedData);
     },
@@ -240,57 +142,68 @@ export default function UserForm({ userId }) {
     [userData]
   );
 
+  const fetchAddressByCep = useCallback(async (cep, setFormData, setErrors) => {
+    try {
+      const cleanedCep = cep.replace(/\D/g, "");
+      if (cleanedCep.length === 8) {
+        const response = await fetch(
+          `https://viacep.com.br/ws/${cleanedCep}/json/`
+        );
+        const data = await response.json();
+        if (!data.erro) {
+          setFormData((prev) => ({
+            ...prev,
+            street: data.logradouro || "",
+            neighborhood: data.bairro || "",
+            city: data.localidade || "",
+            state: data.uf || "",
+            country: "Brasil",
+          }));
+        } else {
+          setErrors((prev) => ({ ...prev, zip_code: "CEP inválido" }));
+        }
+      }
+    } catch (error) {
+      console.error("Erro ao consultar CEP:", error);
+      setErrors((prev) => ({ ...prev, zip_code: "Erro ao consultar CEP" }));
+    }
+  }, []);
+
   const { setHeaderConfig } = useHeader();
 
   useEffect(() => {
     setHeaderConfig({
-      title: "Novo Usuário",
+      title: "Usuários - Lista de Usuários - Novo Usuário",
       subtitle: "Preencha os dados abaixo para criar o perfil",
       icon: FaEdit,
     });
   }, [setHeaderConfig]);
 
+  // Get the main picture
+  const mainPicture = userData.pictures.find((pic) => pic.is_main)?.url || "";
+
   return (
-    <Form onSubmit={handleSubmit} className="w-full">
-      <main className="p-6 space-y-8">
-        <section className="border border-light-border dark:border-dark-border">
-          <h2 className="flex items-center p-6 gap-2 border-b text-lg font-semibold border-light-border dark:border-dark-border bg-light-background-form-secondary dark:bg-dark-background-form-secondary">
-            <MdPerson className="w-8 h-8" /> Informações Pessoais
+    <Form onSubmit={handleSubmit}>
+      <main className="p-2 sm:p-4 md:p-6 mb-14 space-y-6">
+        <section className="mb-14 bg-light-background-form-primary dark:bg-dark-background-form-primary rounded-md">
+          <h2 className="flex items-center pb-2 gap-2 text-lg sm:text-xl font-semibold text-light-text dark:text-dark-text border-b border-light-border dark:border-dark-border">
+            <MdPerson className="w-8 h-8 sm:w-10 sm:h-10 text-light-primary dark:text-dark-primary" />{" "}
+            Informações Pessoais
           </h2>
-          <div className="p-6 space-y-6">
-            <label className="relative w-32 h-32 block group shrink-0 border border-light-border dark:border-dark-border bg-light-background-form-secondary dark:bg-dark-background-form-secondary rounded-md">
-              {userData.picture ? (
-                <CustomImage
-                  src={userData.picture}
-                  alt="Foto do usuário"
-                  className="w-full h-full object-cover rounded-md"
-                />
-              ) : (
-                <MdPerson className="w-[7.9rem] h-[7.9rem] text-light-background dark:text-dark-background bg-light-background-sidebar dark:bg-dark-background-sidebar rounded-md" />
-              )}
-              {mode !== "view" && (
-                <>
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-md">
-                    <span className="font-medium text-white">Alterar</span>
-                  </div>
-                  <input
-                    type="file"
-                    className="hidden"
-                    accept="image/*"
-                    disabled={mode === "view"}
-                    onChange={(e) => {
-                      const file = e.target.files[0];
-                      if (file) {
-                        const imageUrl = URL.createObjectURL(file);
-                        setUserData((prev) => ({ ...prev, picture: imageUrl }));
-                      }
-                    }}
-                  />
-                </>
-              )}
-            </label>
-            <div className="flex flex-col sm:flex-row gap-6">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
+          <div className="pt-2 space-y-6">
+            <SubForm
+              title="Fotos"
+              icon={FaImage}
+              fields={[{ name: "url", label: "Fotos", type: "file" }]}
+              initialData={userData.pictures}
+              schema={userSchema.fields.pictures.innerType}
+              onSave={handleContextSave("pictures")}
+              errors={errors.pictures}
+              width="md:w-fit"
+            />
+
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 gap-4">
                 <CustomInput
                   label="Nome"
                   name="name"
@@ -298,6 +211,7 @@ export default function UserForm({ userId }) {
                   onChange={handleChange}
                   disabled={mode === "view"}
                   error={errors.name}
+                  className="w-full md:w-2/3 text-light-text dark:text-dark-text"
                 />
                 <CustomInput
                   label="Apelido"
@@ -306,6 +220,7 @@ export default function UserForm({ userId }) {
                   onChange={handleChange}
                   disabled={mode === "view"}
                   error={errors.nickname}
+                  className="w-full md:w-1/3 text-light-text dark:text-dark-text"
                 />
                 <CustomInput
                   label="Data de Nascimento"
@@ -315,6 +230,7 @@ export default function UserForm({ userId }) {
                   onChange={handleChange}
                   disabled={mode === "view"}
                   error={errors.birth_date}
+                  className="w-full md:w-1/4 text-light-text dark:text-dark-text"
                 />
                 <CustomInput
                   label="CPF"
@@ -324,6 +240,7 @@ export default function UserForm({ userId }) {
                   disabled={mode === "view"}
                   maxLength={14}
                   error={errors.cpf}
+                  className="w-full md:w-1/4 text-light-text dark:text-dark-text"
                 />
                 <CustomSelect
                   label="Gênero"
@@ -332,265 +249,76 @@ export default function UserForm({ userId }) {
                   onChange={handleChange}
                   disabled={mode === "view"}
                   options={[
-                    { value: "", label: "" },
+                    { value: "", label: "Selecione" },
                     { value: "masculino", label: "Masculino" },
                     { value: "feminino", label: "Feminino" },
                     { value: "outro", label: "Outro" },
                     { value: "prefiro_nao_dizer", label: "Prefiro não dizer" },
                   ]}
                   error={errors.gender}
+                  className="w-full md:w-1/3 text-light-text dark:text-dark-text"
                 />
               </div>
             </div>
           </div>
         </section>
-
-        <section className="space-y-4 border-t border-l border-r border-light-border dark:border-dark-border">
-          <div className="flex items-center justify-between p-6 border-b border-light-border dark:border-dark-border bg-light-background-form-secondary dark:bg-dark-background-form-secondary">
-            <div className="flex flex-col">
-              <h2 className="text-lg font-semibold flex items-center gap-2 text-light-text dark:text-dark-text">
-                <FaMapMarkerAlt className="w-6 h-6" /> Endereços
-              </h2>
-              {errors.addresses && (
-                <span className="text-sm text-light-danger dark:text-dark-danger mt-1">
-                  {errors.addresses}
-                </span>
-              )}
-            </div>
-            {mode !== "view" && (
-              <button
-                type="button"
-                onClick={() => addItem("addresses")}
-                className="flex items-center gap-1 text-light-accent dark:text-dark-accent hover:text-light-primary dark:hover:text-dark-primary"
-              >
-                <FaPlus />
-              </button>
-            )}
-          </div>
-          {userData.addresses.map((address, index) => (
-            <div
-              key={address.id}
-              className="pb-5 pl-5 pr-5 bg-light-background-secondary dark:bg-dark-background-secondary border-b border-light-border dark:border-dark-border"
-            >
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <CustomInput
-                  label="CEP"
-                  name="zip_code"
-                  value={address.zip_code}
-                  onChange={(e) => handleChange(e, index, "addresses")}
-                  disabled={mode === "view"}
-                  error={errors[`addresses[${index}].zip_code`]}
-                />
-                <CustomInput
-                  label="Rua/Avenida"
-                  name="street"
-                  value={address.street}
-                  onChange={(e) => handleChange(e, index, "addresses")}
-                  disabled={mode === "view"}
-                  error={errors[`addresses[${index}].street`]}
-                />
-                <CustomInput
-                  label="Número"
-                  name="number"
-                  value={address.number}
-                  onChange={(e) => handleChange(e, index, "addresses")}
-                  disabled={mode === "view"}
-                  error={errors[`addresses[${index}].number`]}
-                />
-                <CustomInput
-                  label="Complemento"
-                  name="complement"
-                  value={address.complement}
-                  onChange={(e) => handleChange(e, index, "addresses")}
-                  disabled={mode === "view"}
-                  error={errors[`addresses[${index}].complement`]}
-                />
-                <CustomInput
-                  label="Bairro"
-                  name="neighborhood"
-                  value={address.neighborhood}
-                  onChange={(e) => handleChange(e, index, "addresses")}
-                  disabled={mode === "view"}
-                  error={errors[`addresses[${index}].neighborhood`]}
-                />
-                <CustomInput
-                  label="Cidade"
-                  name="city"
-                  value={address.city}
-                  onChange={(e) => handleChange(e, index, "addresses")}
-                  disabled={mode === "view"}
-                  error={errors[`addresses[${index}].city`]}
-                />
-                <CustomInput
-                  label="Estado"
-                  name="state"
-                  value={address.state}
-                  onChange={(e) => handleChange(e, index, "addresses")}
-                  disabled={mode === "view"}
-                  error={errors[`addresses[${index}].state`]}
-                />
-                <CustomInput
-                  label="País"
-                  name="country"
-                  value={address.country}
-                  onChange={(e) => handleChange(e, index, "addresses")}
-                  disabled={mode === "view"}
-                  error={errors[`addresses[${index}].country`]}
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4 mt-4">
-                <CustomInput
-                  type="checkbox"
-                  checked={address.is_main}
-                  onChange={() => handleMainToggle("addresses", index)}
-                  disabled={mode === "view"}
-                  label="Principal"
-                />
-                {mode !== "view" && (
-                  <div className="flex justify-end">
-                    <button
-                      type="button"
-                      onClick={() => removeItem("addresses", index)}
-                      className="text-light-danger dark:text-dark-danger hover:text-light-danger-dark dark:hover:text-dark-danger-dark"
-                    >
-                      <FiTrash2 />
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-          ))}
-        </section>
-
-        <section className="space-y-4 border-t border-l border-r border-light-border dark:border-dark-border">
-          <div className="flex items-center justify-between p-6 border-b border-light-border dark:border-dark-border bg-light-background-form-secondary dark:bg-dark-background-form-secondary">
-            <div className="flex flex-col">
-              <h2 className="text-lg font-semibold flex items-center gap-2 text-light-text dark:text-dark-text">
-                <FaEnvelope className="w-6 h-6" /> E-mails
-              </h2>
-              {errors.emails && (
-                <span className="text-sm text-light-danger dark:text-dark-danger mt-1">
-                  {errors.emails}
-                </span>
-              )}
-            </div>
-            {mode !== "view" && (
-              <button
-                type="button"
-                onClick={() => addItem("emails")}
-                className="flex items-center gap-1 text-light-accent dark:text-dark-accent hover:text-light-primary dark:hover:text-dark-primary"
-              >
-                <FaPlus />
-              </button>
-            )}
-          </div>
-          {userData.emails.map((email, index) => (
-            <div
-              key={email.id}
-              className="pb-5 pl-5 pr-5 space-y-4 bg-light-background-secondary dark:bg-dark-background-secondary border-b border-light-border dark:border-dark-border"
-            >
-              <div className="grid grid-cols-1 gap-4">
-                <CustomInput
-                  label="E-mail"
-                  name="email"
-                  value={email.email}
-                  onChange={(e) => handleChange(e, index, "emails")}
-                  disabled={mode === "view"}
-                  error={errors[`emails[${index}].email`]}
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <CustomInput
-                  type="checkbox"
-                  checked={email.is_main}
-                  onChange={() => handleMainToggle("emails", index)}
-                  disabled={mode === "view"}
-                  label="Principal"
-                />
-                {mode !== "view" && (
-                  <div className="flex justify-end">
-                    <button
-                      type="button"
-                      onClick={() => removeItem("emails", index)}
-                      className="text-light-danger dark:text-dark-danger hover:text-light-danger-dark dark:hover:text-dark-danger-dark"
-                    >
-                      <FiTrash2 />
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-          ))}
-        </section>
-
-        <section className="space-y-4 border-t border-l border-r border-light-border dark:border-dark-border">
-          <div className="flex items-center justify-between p-6 border-b border-light-border dark:border-dark-border bg-light-background-form-secondary dark:bg-dark-background-form-secondary">
-            <div className="flex flex-col">
-              <h2 className="text-lg font-semibold flex items-center gap-2 text-light-text dark:text-dark-text">
-                <FaPhone className="w-6 h-6" /> Telefones
-              </h2>
-              {errors.phones && (
-                <span className="text-sm text-light-danger dark:text-dark-danger mt-1">
-                  {errors.phones}
-                </span>
-              )}
-            </div>
-            {mode !== "view" && (
-              <button
-                type="button"
-                onClick={() => addItem("phones")}
-                className="flex items-center gap-1 text-light-accent dark:text-dark-accent hover:text-light-primary dark:hover:text-dark-primary"
-              >
-                <FaPlus />
-              </button>
-            )}
-          </div>
-          {userData.phones.map((phone, index) => (
-            <div
-              key={phone.id}
-              className="pb-5 pl-5 pr-5 space-y-4 bg-light-background-secondary dark:bg-dark-background-secondary border-b border-light-border dark:border-dark-border"
-            >
-              <div className="grid grid-cols-1 gap-4">
-                <CustomInput
-                  label="Telefone"
-                  name="phone"
-                  value={phone.phone}
-                  onChange={(e) => handleChange(e, index, "phones")}
-                  disabled={mode === "view"}
-                  error={errors[`phones[${index}].phone`]}
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <CustomInput
-                  type="checkbox"
-                  checked={phone.is_main}
-                  onChange={() => handleMainToggle("phones", index)}
-                  disabled={mode === "view"}
-                  label="Principal"
-                />
-                {mode !== "view" && (
-                  <div className="flex justify-end">
-                    <button
-                      type="button"
-                      onClick={() => removeItem("phones", index)}
-                      className="text-light-danger dark:text-dark-danger hover:text-light-danger-dark dark:hover:text-dark-danger-dark"
-                    >
-                      <FiTrash2 />
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-          ))}
-        </section>
+        <div className="space-y-14">
+          <SubForm
+            title="Endereços"
+            icon={FaMapMarkerAlt}
+            fields={[
+              { name: "zip_code", label: "CEP" },
+              { name: "street", label: "Rua/Avenida" },
+              { name: "number", label: "Número" },
+              { name: "complement", label: "Complemento" },
+              { name: "neighborhood", label: "Bairro" },
+              { name: "city", label: "Cidade" },
+              { name: "state", label: "Estado" },
+              { name: "country", label: "País" },
+            ]}
+            initialData={userData.addresses}
+            schema={userSchema.fields.addresses.innerType}
+            onSave={handleContextSave("addresses")}
+            errors={errors.addresses}
+            fetchAddressByCep={fetchAddressByCep}
+          />
+          <SubForm
+            title="E-mails"
+            icon={FaEnvelope}
+            fields={[{ name: "email", label: "E-mail" }]}
+            initialData={userData.emails}
+            schema={userSchema.fields.emails.innerType}
+            onSave={handleContextSave("emails")}
+            errors={errors.emails}
+            width="md:w-[25rem]"
+          />
+          <SubForm
+            title="Telefones"
+            icon={FaPhone}
+            fields={[{ name: "phone", label: "Telefone" }]}
+            initialData={userData.phones}
+            schema={userSchema.fields.phones.innerType}
+            onSave={handleContextSave("phones")}
+            errors={errors.phones}
+            width="md:w-[25rem]"
+          />
+        </div>
       </main>
 
       {mode !== "view" && (
-        <footer className="p-6 flex justify-end gap-4 border-t border-light-border dark:border-dark-border bg-light-background-form-secondary dark:bg-dark-background-form-secondary transition-all duration-300">
-          <Button type="button" variant="secondary">
+        <footer className="p-2 space-x-2 bg-light-background-form-primary dark:bg-dark-background-form-primary border-t border-light-border dark:border-dark-border shadow-sm rounded-b-lg">
+          <Button
+            type="button"
+            variant="secondary"
+            className="px-4 py-2 text-light-text dark:text-dark-text bg-light-background-form-secondary dark:bg-dark-background-form-secondary hover:bg-light-accent dark:hover:bg-dark-accent rounded-md w-auto"
+          >
             Cancelar
           </Button>
-          <Button type="submit" variant="primary">
+          <Button
+            type="submit"
+            variant="primary"
+            className="px-4 py-2 text-light-text dark:text-dark-text bg-light-primary dark:bg-dark-primary hover:bg-light-primary-dark dark:hover:bg-dark-primary-dark rounded-md w-auto"
+          >
             Salvar
           </Button>
         </footer>

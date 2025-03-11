@@ -6,6 +6,12 @@ export default {
     "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
   ],
   theme: {
+    screens: {
+      sm: "640px",
+      md: "768px",
+      lg: "1024px",
+      xl: "1280px",
+    },
     extend: {
       fontFamily: {
         orbitron: ["Orbitron", "sans-serif"],
@@ -13,7 +19,8 @@ export default {
 
       colors: {
         light: {
-          background: "#C4C4C4", // Cinza escuro para o fundo principal (tom mais forte)
+          // background: "#C4C4C4", // Cinza escuro para o fundo principal (tom mais forte)
+          background: "#FFFFFF",
           "background-sidebar": "#F5F5F5", // Cinza muito claro para a barra lateral
           "background-form-primary": "#FFFFFF", // Branco puro para formulários principais
           "background-form-secondary": "#E0E0E0", // Cinza médio para formulários secundários (mais escuro que a sidebar)

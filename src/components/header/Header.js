@@ -12,7 +12,6 @@ const Header = () => {
     <header
       className={`flex flex-col p-6 border-b border-r ${!openSideBar && "border-t"} ${!Icon && "hidden"} border-light-border dark:border-dark-border bg-light-background-form-secondary dark:bg-dark-background-form-secondary transition-all duration-300`}
       style={{
-        marginLeft: openSliderBar ? "16rem" : "", // Padrão para desktop
         // Sobrescreve em mobile com media query ou lógica condicional
         ...(typeof window !== "undefined" &&
           window.innerWidth < 768 && {

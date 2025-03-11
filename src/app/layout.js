@@ -39,13 +39,13 @@ export default function RootLayout({ children }) {
             <AuthProviders>
               <HeaderProvider>
                 <SidebarProvider>
-                  <ClientWrapper>
-                    <Sidebar />
-                    <div className="flex flex-col">
-                      <Header />
-                      <MainProvider>{children}</MainProvider>
-                    </div>
-                  </ClientWrapper>
+                  {/* <ClientWrapper> */}
+                  <Sidebar />
+                  <MainProvider>
+                    <Header />
+                    {children}
+                  </MainProvider>
+                  {/* </ClientWrapper> */}
                 </SidebarProvider>
               </HeaderProvider>
             </AuthProviders>
