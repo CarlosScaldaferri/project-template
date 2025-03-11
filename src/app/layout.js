@@ -33,19 +33,19 @@ export default function RootLayout({ children }) {
           }}
         />
       </head>
-      <body className="font-sans bg-light-background dark:bg-dark-background text-light-text dark:text-dark-text">
+      <body className="font-sans bg-gradient-light dark:bg-gradient-dark text-light-text dark:text-dark-text">
         <div className="flex min-h-screen">
           <UserProvider>
             <AuthProviders>
               <HeaderProvider>
                 <SidebarProvider>
-                  {/* <ClientWrapper> */}
-                  <Sidebar />
-                  <MainProvider>
-                    <Header />
-                    {children}
-                  </MainProvider>
-                  {/* </ClientWrapper> */}
+                  <ClientWrapper>
+                    <Sidebar />
+                    <MainProvider>
+                      <Header />
+                      {children}
+                    </MainProvider>
+                  </ClientWrapper>
                 </SidebarProvider>
               </HeaderProvider>
             </AuthProviders>

@@ -18,12 +18,14 @@ import { MdPerson } from "react-icons/md";
 import * as Yup from "yup";
 import { userSchema } from "@/schemas/userSchema";
 import SubForm from "@/components/form/subForm/SubForm";
+import CustomImage from "@/components/form/image/CustomImage";
 
 export default function UserForm({ userId }) {
   const [userData, setUserData] = useState({
     name: "",
     nickname: "",
-    pictures: [], // Changed from picture to pictures array
+    picture: "",
+    fileName: "",
     birth_date: "",
     cpf: "",
     gender: "",
@@ -39,7 +41,11 @@ export default function UserForm({ userId }) {
       const response = await fetch(`/api/users/${id}`);
       if (!response.ok) throw new Error("Erro ao buscar dados do usuário");
       const data = await response.json();
-      setUserData(data);
+      setUserData({
+        ...data,
+        picture: data.picture || "",
+        fileName: "",
+      });
     } catch (error) {
       console.error("Erro ao carregar dados:", error);
     }
@@ -81,7 +87,7 @@ export default function UserForm({ userId }) {
       const newErrors = { ...prev };
       if (!hasMain) {
         newErrors[field] =
-          `Pelo menos um ${field === "addresses" ? "endereço" : field === "emails" ? "e-mail" : field === "phones" ? "telefone" : "imagem"} deve ser marcado como principal`;
+          `Pelo menos um ${field === "addresses" ? "endereço" : field === "emails" ? "e-mail" : "telefone"} deve ser marcado como principal`;
       } else {
         delete newErrors[field];
       }
@@ -179,8 +185,14 @@ export default function UserForm({ userId }) {
     });
   }, [setHeaderConfig]);
 
-  // Get the main picture
-  const mainPicture = userData.pictures.find((pic) => pic.is_main)?.url || "";
+  // Cleanup para liberar URL de blob
+  useEffect(() => {
+    return () => {
+      if (userData.picture && userData.picture.startsWith("blob:")) {
+        URL.revokeObjectURL(userData.picture);
+      }
+    };
+  }, [userData.picture]);
 
   return (
     <Form onSubmit={handleSubmit}>
@@ -191,19 +203,86 @@ export default function UserForm({ userId }) {
             Informações Pessoais
           </h2>
           <div className="pt-2 space-y-6">
-            <SubForm
-              title="Fotos"
-              icon={FaImage}
-              fields={[{ name: "url", label: "Fotos", type: "file" }]}
-              initialData={userData.pictures}
-              schema={userSchema.fields.pictures.innerType}
-              onSave={handleContextSave("pictures")}
-              errors={errors.pictures}
-              width="md:w-fit"
-            />
-
             <div className="space-y-6">
               <div className="grid grid-cols-1 gap-4">
+                {/* Componente de seleção de foto */}
+                <div className="flex flex-col gap-2">
+                  <label className="flex items-center gap-2 text-light-text dark:text-dark-text font-medium">
+                    <FaImage className="w-5 h-5" />
+                    Foto do Perfil
+                  </label>
+                  <div className="flex flex-col gap-2">
+                    <div className="relative w-32 h-32 rounded-full overflow-hidden border-2 border-light-border dark:border-dark-border group">
+                      {userData.picture ? (
+                        <CustomImage
+                          src={userData.picture}
+                          alt="Foto do usuário"
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-light-background-form-secondary dark:bg-dark-background-form-secondary flex items-center justify-center">
+                          <FaImage className="w-8 h-8 text-light-text dark:text-dark-text opacity-50" />
+                        </div>
+                      )}
+                      {mode !== "view" && (
+                        <>
+                          <input
+                            type="file"
+                            id="pictureInput"
+                            accept="image/*"
+                            onChange={(e) => {
+                              const file = e.target.files[0];
+                              if (file) {
+                                if (file.size > 5 * 1024 * 1024) {
+                                  setErrors((prev) => ({
+                                    ...prev,
+                                    picture: "A imagem deve ter no máximo 5MB",
+                                  }));
+                                  return;
+                                }
+                                const imageUrl = URL.createObjectURL(file);
+                                setUserData((prev) => ({
+                                  ...prev,
+                                  picture: imageUrl,
+                                  fileName: file.name,
+                                }));
+                                setErrors((prev) => {
+                                  const newErrors = { ...prev };
+                                  delete newErrors.picture;
+                                  return newErrors;
+                                });
+                              }
+                            }}
+                            disabled={mode === "view"}
+                            className="hidden"
+                          />
+                          <label
+                            htmlFor="pictureInput"
+                            className="absolute inset-0 flex items-center justify-center bg-transparent text-light-primary dark:text-dark-primary text-sm font-semibold opacity-0 group-hover:opacity-100 transition-opacity duration-200 cursor-pointer hover:bg-light-accent dark:hover:bg-dark-accent hover:bg-opacity-50"
+                          >
+                            Escolher foto
+                          </label>
+                        </>
+                      )}
+                    </div>
+                    {userData.fileName && (
+                      <span className="text-sm text-light-text dark:text-dark-text opacity-75">
+                        {userData.fileName}
+                      </span>
+                    )}
+                    {mode !== "view" && (
+                      <p className="text-sm text-light-text dark:text-dark-text opacity-75">
+                        Formatos aceitos: JPG, PNG, até 5MB
+                      </p>
+                    )}
+                  </div>
+                  {errors.picture && (
+                    <span className="text-red-500 text-sm">
+                      {errors.picture}
+                    </span>
+                  )}
+                </div>
+
                 <CustomInput
                   label="Nome"
                   name="name"
