@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { FaPlus, FaEdit } from "react-icons/fa";
 import { FiTrash2 } from "react-icons/fi";
 import CustomInput from "@/components/form/input/CustomInput";
 import CustomImage from "@/components/form/image/CustomImage";
 import * as Yup from "yup";
 import Button from "../button/Button";
+import CustomSelect from "../select/CustomSelect";
 
 const SubForm = ({
   title,
@@ -16,25 +17,37 @@ const SubForm = ({
   schema,
   onSave,
   errors: externalErrors,
-  fetchAddressByCep,
   width = "w-full",
+  fetchAddressByCep,
 }) => {
   const [items, setItems] = useState(initialData || []);
   const [isOpen, setIsOpen] = useState(false);
   const [formData, setFormData] = useState(
-    fields.reduce((acc, field) => ({ ...acc, [field.name]: "" }), {
-      id: Date.now(),
-      is_main: false,
-    })
+    fields.reduce(
+      (acc, field) => ({
+        ...acc,
+        [field.name]:
+          field.type === "select"
+            ? field.options[0].value
+            : field.type === "number"
+              ? ""
+              : "",
+      }),
+      {
+        id: null, // Mudamos de Date.now() para null para novos itens
+        is_main: false,
+      }
+    )
   );
   const [errors, setErrors] = useState({});
   const [editIndex, setEditIndex] = useState(null);
   const rowRefs = useRef([]);
 
   const validateField = useCallback(
-    async (fieldName, value) => {
+    async (fieldName, value, fullData) => {
       try {
-        await schema.validateAt(fieldName, { [fieldName]: value });
+        const dataToValidate = fullData || { [fieldName]: value };
+        await schema.validateAt(fieldName, dataToValidate);
         setErrors((prev) => {
           const newErrors = { ...prev };
           delete newErrors[fieldName];
@@ -52,32 +65,51 @@ const SubForm = ({
   const handleChange = useCallback(
     (e) => {
       const { name, value, type, checked, files } = e.target;
-      let newValue = type === "checkbox" ? checked : value;
+      let newValue;
+
+      const field = fields.find((f) => f.name === name);
+      if (field?.type === "number") {
+        const numericValue = value.replace(/[^0-9]/g, "");
+        newValue = numericValue;
+      } else {
+        newValue = type === "checkbox" ? checked : value;
+      }
 
       if (type === "file" && files && files[0]) {
         newValue = URL.createObjectURL(files[0]);
       }
 
       setFormData((prev) => ({ ...prev, [name]: newValue }));
+      validateField(name, newValue, { ...formData, [name]: newValue });
 
-      // Valida apenas se não for um campo de arquivo
-      if (type !== "file") {
-        validateField(name, newValue);
+      if (field?.onChange) {
+        field.onChange(e, setFormData, validateField, formData.type);
       }
 
-      if (name === "zip_code" && fetchAddressByCep) {
+      if (field?.name === "zip_code" && fetchAddressByCep) {
         fetchAddressByCep(newValue, setFormData, setErrors);
       }
     },
-    [validateField, fetchAddressByCep]
+    [validateField, formData, fields, fetchAddressByCep]
   );
 
   const resetFormForNewEntry = useCallback(() => {
     setFormData(
-      fields.reduce((acc, field) => ({ ...acc, [field.name]: "" }), {
-        id: Date.now(),
-        is_main: false,
-      })
+      fields.reduce(
+        (acc, field) => ({
+          ...acc,
+          [field.name]:
+            field.type === "select"
+              ? field.options[0].value
+              : field.type === "number"
+                ? ""
+                : "",
+        }),
+        {
+          id: null, // Null para novos itens
+          is_main: false,
+        }
+      )
     );
     setErrors({});
     setEditIndex(null);
@@ -86,19 +118,28 @@ const SubForm = ({
 
   const handleSave = useCallback(
     async (e) => {
-      e.preventDefault(); // Impede propagação para o UserForm
+      e.preventDefault();
       try {
-        await schema.validate(formData, { abortEarly: false });
+        const adjustedFormData = { ...formData };
+        fields.forEach((field) => {
+          if (field.type === "number" && adjustedFormData[field.name]) {
+            adjustedFormData[field.name] = Number(adjustedFormData[field.name]);
+          }
+        });
+
+        await schema.validate(adjustedFormData, { abortEarly: false });
         setErrors({});
+
         if (editIndex !== null) {
           const updatedItems = items.map((item, i) =>
-            i === editIndex ? { ...formData } : item
+            i === editIndex ? { ...adjustedFormData } : item
           );
           setItems(updatedItems);
           onSave(updatedItems);
         } else {
-          setItems((prev) => [...prev, formData]);
-          onSave([...items, formData]);
+          const newItem = { ...adjustedFormData };
+          setItems((prev) => [...prev, newItem]);
+          onSave([...items, newItem]);
         }
         resetFormForNewEntry();
       } catch (err) {
@@ -108,30 +149,27 @@ const SubForm = ({
             errorMap[error.path] = error.message;
           });
           setErrors(errorMap);
-          console.log("Erros de validação no SubForm:", errorMap); // Adicione isso para depuração
+          console.log("Validation errors:", errorMap);
         }
       }
     },
-    [formData, schema, items, editIndex, onSave, resetFormForNewEntry]
+    [formData, schema, items, editIndex, onSave, resetFormForNewEntry, fields]
   );
-
-  // No renderForm:
-  <Button
-    type="button"
-    variant="primary"
-    onClick={handleSave}
-    className="px-2 py-1 text-sm text-light-text dark:text-dark-text bg-light-primary dark:bg-dark-primary hover:bg-light-primary-dark dark:hover:bg-dark-primary-dark rounded-md w-full sm:w-auto"
-  >
-    Salvar
-  </Button>;
 
   const handleEdit = useCallback(
     (index) => {
+      const item = { ...items[index] };
+      // Converte campos numéricos para strings ao editar
+      fields.forEach((field) => {
+        if (field.type === "number" && item[field.name] !== undefined) {
+          item[field.name] = String(item[field.name]);
+        }
+      });
       setEditIndex(index);
-      setFormData({ ...items[index] });
+      setFormData(item); // O item já contém o id do banco de dados
       setIsOpen(true);
     },
-    [items]
+    [items, fields]
   );
 
   const handleRemove = useCallback(
@@ -157,10 +195,21 @@ const SubForm = ({
 
   const resetForm = useCallback(() => {
     setFormData(
-      fields.reduce((acc, field) => ({ ...acc, [field.name]: "" }), {
-        id: Date.now(),
-        is_main: false,
-      })
+      fields.reduce(
+        (acc, field) => ({
+          ...acc,
+          [field.name]:
+            field.type === "select"
+              ? field.options[0].value
+              : field.type === "number"
+                ? ""
+                : "",
+        }),
+        {
+          id: null, // Null para novos itens
+          is_main: false,
+        }
+      )
     );
     setErrors({});
     setIsOpen(false);
@@ -169,59 +218,48 @@ const SubForm = ({
 
   const renderForm = () => (
     <div
-      className={`w-full ${width} p-4 mt-1 bg-light-background-form-secondary dark:bg-dark-background-form-secondary border-2 border-light-primary dark:border-dark-primary rounded-md ${
-        editIndex !== null ? "max-w-full" : ""
+      className={`w-full ${width} p-4 bg-light-background-form-secondary dark:bg-dark-background-form-secondary border border-light-accent dark:border-dark-border ${
+        editIndex !== null ? "max-w-full rounded-md" : "mt-2 rounded-b-md"
       }`}
     >
       <div className="grid grid-cols-[repeat(auto-fit,minmax(min(300px,100%),1fr))] gap-4 w-full">
-        {fields.map((field) => (
-          <div key={field.name} className="flex flex-col w-full">
-            {field.type === "file" ? (
-              <div className="flex flex-col w-full">
-                <label className="text-sm text-light-text dark:text-dark-text mb-1">
-                  {field.label}
-                </label>
-                <div className="relative w-full">
-                  <input
-                    type="file"
-                    name={field.name}
-                    accept="image/*"
-                    onChange={handleChange}
-                    className="hidden"
-                    id={`file-input-${field.name}`}
-                  />
-                  <Button
-                    type="button"
-                    className="cursor-pointer px-8 py-1 text-sm text-light-text dark:text-dark-text bg-light-primary dark:bg-dark-primary hover:bg-light-primary-dark dark:hover:bg-dark-primary-dark rounded-md w-auto"
-                  >
-                    <label
-                      htmlFor={`file-input-${field.name}`}
-                      className="whitespace-nowrap cursor-pointer"
-                    >
-                      Escolher Arquivo
-                    </label>
-                  </Button>
-                  {formData[field.name] && (
-                    <CustomImage
-                      src={formData[field.name]}
-                      alt="Pré-visualização"
-                      className="col-span-1 mt-2 w-[10.5rem] h-[10.5rem]"
-                    />
-                  )}
-                </div>
-              </div>
-            ) : (
-              <CustomInput
-                label={field.label}
-                name={field.name}
-                value={formData[field.name]}
-                onChange={handleChange}
-                error={errors[field.name]}
-                className="w-full text-light-text dark:text-dark-text"
-              />
-            )}
-          </div>
-        ))}
+        {fields
+          .filter((field) => !field.readOnly)
+          .map((field, index) => (
+            <div key={index} className="flex flex-col w-full">
+              {field.type === "select" ? (
+                <CustomSelect
+                  label={field.label}
+                  name={field.name}
+                  value={formData[field.name]}
+                  onChange={field.onChange || handleChange}
+                  options={field.options}
+                  error={errors[field.name]}
+                  className="w-full text-light-text dark:text-dark-text"
+                />
+              ) : (
+                <CustomInput
+                  label={field.label}
+                  name={field.name}
+                  type={field.type || "text"}
+                  value={formData[field.name]}
+                  onChange={
+                    field.onChange
+                      ? (e) =>
+                          field.onChange(
+                            e,
+                            setFormData,
+                            validateField,
+                            formData.type
+                          )
+                      : handleChange
+                  }
+                  error={errors[field.name]}
+                  className="w-full text-light-text dark:text-dark-text"
+                />
+              )}
+            </div>
+          ))}
       </div>
 
       <div className="flex justify-start gap-2 sm:gap-3 mt-4">
@@ -251,27 +289,32 @@ const SubForm = ({
     const colunas = Array(numColumns)
       .fill()
       .map((_, index) => {
-        if (index === numColumns - 2)
-          return "40px"; // Coluna "Principal"
-        else if (index === numColumns - 1) return "80px"; // Coluna "Ações"
-        return "1fr"; // Outras colunas
+        if (index === numColumns - 2) return "60px";
+        else if (index === numColumns - 1) return "60px";
+        return "1fr";
       });
     return colunas.join(" ");
   };
 
   const gridTemplateColumns = calcularLarguraColunas(fields);
 
+  useEffect(() => {
+    setItems(initialData || []);
+  }, [initialData]);
+
   return (
     <section
       className={`bg-light-background-form-primary dark:bg-dark-background-form-primary`}
     >
       <div className="flex flex-col border-b border-light-border dark:border-dark-border">
-        <h2 className="flex items-center gap-2 text-lg sm:text-xl font-semibold text-light-text dark:text-dark-text">
+        <h2
+          className={`flex items-center gap-2 ${externalErrors ? "" : "pb-4"} text-lg sm:text-xl font-semibold text-light-text dark:text-dark-text`}
+        >
           <Icon className="w-5 h-5 sm:w-6 sm:h-6 text-light-primary dark:text-dark-primary" />
           {title}
         </h2>
         {externalErrors && (
-          <span className="text-xs sm:text-sm text-light-danger dark:text-dark-danger">
+          <span className="text-xs pb-4 sm:text-sm text-light-danger dark:text-dark-danger">
             {externalErrors}
           </span>
         )}
@@ -282,37 +325,49 @@ const SubForm = ({
           className={`pt-2 w-full ${width} bg-light-background-form-primary dark:bg-dark-background-form-primary`}
         >
           {/* Desktop Grid */}
-          <div className="hidden md:block overflow-x-auto p-2 border border-light-border dark:border-dark-border rounded-md">
+          <div className="hidden md:block w-full h-full overflow-hidden text-light-text dark:text-dark-text bg-light-background dark:bg-dark-background rounded-b-md bg-clip-border border border-light-border dark:border-dark-border">
             <div
-              className={`grid ${gridTemplateColumns} gap-x-4 border-b border-light-border dark:border-dark-border pb-2 text-xs sm:text-sm font-medium text-light-muted dark:text-dark-muted items-center`}
+              className={`grid ${gridTemplateColumns} gap-x-4 border-b border-light-border dark:border-dark-border pb-2 text-xs sm:text-sm font-medium text-light-muted dark:text-dark-muted items-center bg-light-background-sidebar dark:bg-dark-background-sidebar`}
               style={{ gridTemplateColumns: gridTemplateColumns }}
             >
-              {fields.map((field) => (
-                <span key={field.name} className="truncate">
+              {fields.map((field, index) => (
+                <span key={index} className="truncate p-4">
                   {field.label}
                 </span>
               ))}
-              <span className="text-center">Principal</span>
-              <span className="text-center">Ações</span>
+              <span className="truncate w-fit">Principal</span>
+              <span className="truncate w-fit">Ações</span>
             </div>
             {items.map((item, index) => (
-              <div key={item.id}>
+              <div
+                key={index}
+                className={`even:bg-light-background-form-secondary dark:even:bg-dark-background-form-secondary hover:bg-light-accent dark:hover:bg-dark-accent ${index === items.length - 1 ? "border-b-0" : "border-b border-light-border dark:border-dark-border"}`}
+              >
                 {editIndex !== index ? (
                   <div
                     ref={(el) => (rowRefs.current[index] = el)}
-                    className={`grid ${gridTemplateColumns} py-2 text-light-text dark:text-dark-text text-xs sm:text-sm items-center`}
+                    className={`grid ${gridTemplateColumns} text-light-text dark:text-dark-text text-xs sm:text-sm items-center justify-start p-4`}
                     style={{ gridTemplateColumns: gridTemplateColumns }}
                   >
-                    {fields.map((field) =>
-                      field.type === "file" ? (
+                    {fields.map((field, index) =>
+                      field.type === "checkbox" ? (
+                        <div key={index} className="flex justify-center">
+                          <CustomInput
+                            type="checkbox"
+                            checked={item[field.name] || false}
+                            disabled={true}
+                            className="justify-self-center"
+                          />
+                        </div>
+                      ) : field.type === "file" ? (
                         <CustomImage
-                          key={field.name}
+                          key={index}
                           src={item[field.name]}
                           alt={field.label}
-                          className="w-12 h-12 object-cover border-none"
+                          className="w-12 h-12 object-cover border-none rounded-md"
                         />
                       ) : (
-                        <span key={field.name} className="truncate">
+                        <span key={index} className="truncate">
                           {item[field.name] || "-"}
                         </span>
                       )
@@ -352,15 +407,30 @@ const SubForm = ({
           {/* Mobile Cards */}
           <div className="md:hidden w-full space-y-2 mb-2">
             {items.map((item, index) => (
-              <div key={item.id}>
+              <div key={index}>
                 {editIndex !== index ? (
-                  <div className="p-2 bg-light-background-form-primary dark:bg-dark-background-form-primary border border-light-border dark:border-dark-border rounded-md">
+                  <div
+                    key={index}
+                    className="p-2 bg-light-background-form-primary dark:bg-dark-background-form-primary border border-light-border dark:border-dark-border rounded-md"
+                  >
                     <div className="space-y-2 text-sm text-light-text dark:text-dark-text">
-                      {fields.map((field) =>
-                        field.type === "file" ? (
+                      {fields.map((field, index) =>
+                        field.type === "checkbox" ? (
+                          <div key={index} className="relative w-full">
+                            <span className="truncate w-fit text-light-muted dark:text-dark-muted">
+                              {field.label}:
+                            </span>
+                            <CustomInput
+                              type="checkbox"
+                              checked={item[field.name] || false}
+                              disabled={true}
+                              className="absolute right-0 top-1/2 transform -translate-y-1/2"
+                            />
+                          </div>
+                        ) : field.type === "file" ? (
                           <div
-                            key={field.name}
-                            className="flex justify-between"
+                            key={index}
+                            className="flex justify-between items-center"
                           >
                             <span className="font-medium text-light-muted dark:text-dark-muted">
                               {field.label}:
@@ -373,8 +443,8 @@ const SubForm = ({
                           </div>
                         ) : (
                           <div
-                            key={field.name}
-                            className="flex justify-between"
+                            key={index}
+                            className="flex justify-between items-center"
                           >
                             <span className="font-medium text-light-muted dark:text-dark-muted">
                               {field.label}:
@@ -383,16 +453,16 @@ const SubForm = ({
                           </div>
                         )
                       )}
+                      {/* Campo Principal com o mesmo estilo */}
                       <div className="relative w-full">
-                        <span className="font-medium text-light-muted dark:text-dark-muted absolute left-0">
+                        <span className="truncate w-fit text-light-muted dark:text-dark-muted">
                           Principal:
                         </span>
                         <CustomInput
                           type="checkbox"
-                          label=""
                           checked={item.is_main || false}
                           onChange={() => handleMainToggle(index)}
-                          className="bg-light-primary-dark absolute right-0"
+                          className="absolute right-0 top-1/2 transform -translate-y-1/2"
                         />
                       </div>
                     </div>
@@ -414,7 +484,9 @@ const SubForm = ({
                     </div>
                   </div>
                 ) : (
-                  <div className="mt-2">{renderForm()}</div>
+                  <div key={index} className="mt-2">
+                    {renderForm()}
+                  </div>
                 )}
               </div>
             ))}
@@ -430,10 +502,21 @@ const SubForm = ({
           onClick={() => {
             setEditIndex(null);
             setFormData(
-              fields.reduce((acc, field) => ({ ...acc, [field.name]: "" }), {
-                id: Date.now(),
-                is_main: false,
-              })
+              fields.reduce(
+                (acc, field) => ({
+                  ...acc,
+                  [field.name]:
+                    field.type === "select"
+                      ? field.options[0].value
+                      : field.type === "number"
+                        ? ""
+                        : "",
+                }),
+                {
+                  id: null, // Null para novos itens
+                  is_main: false,
+                }
+              )
             );
             setIsOpen(true);
           }}

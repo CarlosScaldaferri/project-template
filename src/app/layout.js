@@ -1,5 +1,5 @@
 import PropTypes from "prop-types";
-import AuthProviders from "@/utils/AuthProviders";
+import AuthProviders from "@/utils/AuthProviders"; // Presumo que seja o seu AuthProvider customizado
 import "./globals.css";
 import { UserProvider } from "@auth0/nextjs-auth0/client";
 import { SidebarProvider } from "@/contexts/SidebarContext";
@@ -7,7 +7,6 @@ import Sidebar from "@/components/sideBar/SideBar";
 import MainProvider from "@/utils/MainProvider";
 import Header from "@/components/header/Header";
 import { HeaderProvider } from "@/contexts/HeaderContext";
-import ClientWrapper from "@/utils/ClientWrapper";
 
 export const metadata = {
   title: "Create Next App",
@@ -34,23 +33,22 @@ export default function RootLayout({ children }) {
         />
       </head>
       <body className="font-sans bg-gradient-light dark:bg-gradient-dark text-light-text dark:text-dark-text">
-        <div className="flex min-h-screen">
-          <UserProvider>
-            <AuthProviders>
-              <HeaderProvider>
-                <SidebarProvider>
-                  <ClientWrapper>
-                    <Sidebar />
-                    <MainProvider>
-                      <Header />
-                      {children}
-                    </MainProvider>
-                  </ClientWrapper>
-                </SidebarProvider>
-              </HeaderProvider>
-            </AuthProviders>
-          </UserProvider>
-        </div>
+        <UserProvider>
+          <AuthProviders>
+            <SidebarProvider>
+              <div className="flex min-h-screen">
+                <Sidebar />
+                <HeaderProvider>
+                  <MainProvider>
+                    <Header />
+                    <main>{children}</main>{" "}
+                    {/* Adicionei <main> para maior clareza */}
+                  </MainProvider>
+                </HeaderProvider>
+              </div>
+            </SidebarProvider>
+          </AuthProviders>
+        </UserProvider>
       </body>
     </html>
   );

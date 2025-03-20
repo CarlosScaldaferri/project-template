@@ -1,5 +1,11 @@
 "use client";
 
+import {
+  ListItem,
+  ListItemButton,
+  ListItemIcon,
+  ListItemText,
+} from "@mui/material";
 import { useState, useEffect } from "react";
 import { FaSun, FaMoon } from "react-icons/fa";
 
@@ -29,14 +35,16 @@ export default function ThemeSwitcher() {
   };
 
   return (
-    <button
-      onClick={toggleTheme}
-      className="flex flex-col justify-center items-center gap-1 min-h-[64px] w-full hover:bg-light-primary/10 dark:hover:bg-dark-primary/10 text-light-text dark:text-dark-text"
-    >
-      <span className="flex items-center justify-center min-w-0">
-        {isDark ? <FaSun size={24} /> : <FaMoon size={24} />}
-      </span>
-      <span className="text-xs">Tema</span>
-    </button>
+    <ListItem disablePadding>
+      <ListItemButton onClick={toggleTheme}>
+        <ListItemIcon className="text-light-text dark:text-dark-text">
+          {isDark ? <FaSun size={24} /> : <FaMoon size={24} />}
+        </ListItemIcon>
+        <ListItemText
+          primary="Tema"
+          className="text-light-text dark:text-dark-text"
+        />
+      </ListItemButton>
+    </ListItem>
   );
 }

@@ -1,12 +1,15 @@
-import { dbFindUserBySub } from "@/repositories/userRepository";
-import { createUser, updateUser } from "../indivisibleRules/userRules";
+import {
+  createUser,
+  findUserBySub,
+  updateUser,
+} from "../indivisibleRules/userRules";
 
-export const createOrUpdateUser = async (user) => {
-  let tempUser = await dbFindUserBySub(user.sub);
+export const createOrUpdateUser = async (user, isAuth0Sync) => {
+  let tempUser = await findUserBySub(user.sub);
 
   if (!tempUser) {
     return createUser(user);
   } else {
-    return updateUser(user);
+    return updateUser(user, isAuth0Sync);
   }
 };

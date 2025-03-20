@@ -5,7 +5,7 @@ const SidebarContext = createContext();
 
 export function SidebarProvider({ children }) {
   const [openSliderBar, setOpenSliderBar] = useState(null);
-  const [openSideBar, setOpenSideBar] = useState(false); // Novo estado
+  const [openSideBar, setOpenSideBar] = useState(true); // Novo estado
 
   return (
     <SidebarContext.Provider
