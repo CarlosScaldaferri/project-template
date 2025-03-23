@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 export async function GET(request, { params }) {
   try {
     const { id } = await params; // Desestruturação direta de params, que já é resolvido
+
     const user = await findUserBySub(id, {
       email: true,
       address: true,

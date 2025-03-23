@@ -22,7 +22,7 @@ function MainContent({ children }) {
       }
     }
 
-    updateLayout(); // Ajusta no carregamento inicial
+    updateLayout();
     window.addEventListener("resize", updateLayout);
     return () => window.removeEventListener("resize", updateLayout);
   }, [openSliderBar]);

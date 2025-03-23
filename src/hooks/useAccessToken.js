@@ -8,7 +8,7 @@ const useAccessToken = () => {
   useEffect(() => {
     const fetchAccessToken = async () => {
       try {
-        const response = await fetch("/api/auth/token", {
+        const response = await fetch("/api/auth/token/access-token", {
           method: "GET",
           credentials: "include",
           headers: { "Content-Type": "application/json" },

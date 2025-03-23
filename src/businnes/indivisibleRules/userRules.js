@@ -9,17 +9,41 @@ export const getAllUsers = () => {
   return dbGetAllUsers();
 };
 
-export const createUser = (user) => {
-  return dbCreateUser({
-    sub: user.sub,
-    name: user.name,
-    nickname: user.nickname,
-    picture: user.picture,
-    updated_at: new Date(),
-    address: user.address || undefined,
-    email: user.email || undefined,
-    telephone: user.telephone || undefined,
-  });
+export const createUser = (user, isAuth0Sync) => {
+  if (isAuth0Sync) {
+    const newUser = {
+      sub: user.sub,
+      name: user.name || null,
+      nickname: user.nickname || null,
+      picture: user.picture || null,
+      updated_at: user.updated_at || new Date(),
+      address: undefined,
+      telephone: undefined,
+      email: user.email
+        ? {
+            create: [
+              {
+                email: user.email,
+                is_main: true,
+                email_verified: user.email_verified || false,
+              },
+            ],
+          }
+        : undefined,
+    };
+    return dbCreateUser(newUser);
+  } else {
+    return dbCreateUser({
+      sub: user.sub,
+      name: user.name,
+      nickname: user.nickname,
+      picture: user.picture,
+      updated_at: new Date(),
+      address: user.address || undefined,
+      email: user.email || undefined,
+      telephone: user.telephone || undefined,
+    });
+  }
 };
 
 export const updateUser = async (user, isAuth0Sync = false) => {
@@ -36,22 +60,36 @@ export const updateUser = async (user, isAuth0Sync = false) => {
   let updateData;
 
   if (isAuth0Sync) {
-    // Objeto resumido para sincronização com Auth0
+    const emailExists = existingUser.email.some((e) => e.email === user.email);
+
     updateData = {
+      sub: user.sub,
       name: user.name,
       nickname: user.nickname,
       picture: user.picture,
       updated_at: new Date(),
-      email: {
-        create:
-          user.email?.length > 0 // Adiciona apenas o email enviado, se houver
-            ? user.email.map((e) => ({
-                email: e.email,
-                is_main: e.is_main || false,
-                email_verified: e.email_verified || false,
-              }))
-            : undefined,
-      },
+      email: emailExists
+        ? {
+            update: {
+              where: {
+                id: existingUser.email.find((e) => e.email === user.email).id,
+              },
+              data: {
+                email: user.email,
+                is_main: true,
+                email_verified: user.email_verified || false,
+              },
+            },
+          }
+        : {
+            create: [
+              {
+                email: user.email,
+                is_main: true,
+                email_verified: user.email_verified || false,
+              },
+            ],
+          },
     };
   } else {
     // Lógica completa para atualização normal
@@ -86,6 +124,7 @@ export const updateUser = async (user, isAuth0Sync = false) => {
     const addressesToUpdate = user.address?.filter((a) => a.id) || [];
 
     updateData = {
+      sub: user.sub,
       name: user.name,
       nickname: user.nickname,
       picture: user.picture,
@@ -203,7 +242,7 @@ export const mapAuth0UserToDbUser = (auth0User) => {
     name: auth0User.name || null,
     nickname: auth0User.nickname || null,
     picture: auth0User.picture || null,
-    updated_at: new Date(), // Opcional: pode remover se dbCreateUser já define isso
+    updated_at: new Date(),
     email: auth0User.email
       ? [
           {
@@ -213,10 +252,46 @@ export const mapAuth0UserToDbUser = (auth0User) => {
           },
         ]
       : undefined,
-    telephone: [], // Ou undefined, dependendo do que você prefere
-    address: [], // Ou undefined
+    telephone: [],
+    address: [],
   };
-  return mapped; // Retorna diretamente, sem { user: ... }
+  return mapped;
+};
+
+export const mapFormUserToAuth0User = (formUser) => {
+  const isSocialConnection = !formUser.sub?.startsWith("auth0|");
+  let auth0User;
+  if (!isSocialConnection) {
+    auth0User = {
+      nickname: formUser.nickname,
+      name: formUser.name,
+      picture: formUser.picture,
+      updated_at: formUser.updated_at,
+      user_metadata: {
+        birth_date: formUser.birth_date,
+        cpf: formUser.cpf,
+        telefhones: formUser.telephones || [],
+        emails: formUser.emails || [],
+        addresses: formUser.addresses || [],
+      },
+    };
+  } else {
+    auth0User = {
+      user_metadata: {
+        nickname: formUser.nickname,
+        name: formUser.name,
+        picture: formUser.picture,
+        updated_at: formUser.updated_at,
+        birth_date: formUser.birth_date,
+        cpf: formUser.cpf,
+        telefhones: formUser.telephones || [],
+        emails: formUser.emails || [],
+        addresses: formUser.addresses || [],
+      },
+    };
+  }
+
+  return auth0User;
 };
 
 export const mapFormUserToDbUser = (formUser) => {
@@ -302,6 +377,5 @@ export const mapFormUserToDbUser = (formUser) => {
     telephone: mappedTelephones,
     address: mappedAddresses,
   };
-
   return mapped;
 };

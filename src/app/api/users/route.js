@@ -45,26 +45,28 @@ const mockUser = {
   ],
 };
 
-export const POST = async function create(req) {
+export const POST = async (req) => {
   try {
-    const { isAuth0Sync, ...userData } = await req.json();
+    const body = await req.json();
 
-    const result = await createOrUpdateUser(userData, isAuth0Sync);
+    const { isAuth0Sync, ...userData } = body;
 
-    return NextResponse.json(result, { status: 200 });
-  } catch (error) {
-    console.error("Error creating or updating user:", error);
-
-    // Verificar tipo de erro e retornar mensagem específica
-    if (error.message.includes("PrismaClient")) {
+    if (!userData || Object.keys(userData).length === 0) {
       return NextResponse.json(
-        { error: "Database connection error", details: error.message },
-        { status: 500 }
+        { error: "Dados do usuário não fornecidos" },
+        { status: 400 }
       );
     }
 
+    const result = await createOrUpdateUser(userData, isAuth0Sync);
+    return NextResponse.json(result, { status: 200 });
+  } catch (error) {
+    console.error("Error creating or updating user:", error);
     return NextResponse.json(
-      { error: "Failed to create or update user", details: error.message },
+      {
+        error: "Failed to create or update user",
+        details: error.message || "Unknown error",
+      },
       { status: 500 }
     );
   }

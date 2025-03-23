@@ -6,7 +6,7 @@ import { FiTrash2 } from "react-icons/fi";
 import CustomInput from "@/components/form/input/CustomInput";
 import CustomImage from "@/components/form/image/CustomImage";
 import * as Yup from "yup";
-import Button from "../button/Button";
+import Button from "../button/CustomButton";
 import CustomSelect from "../select/CustomSelect";
 
 const SubForm = ({
@@ -29,12 +29,14 @@ const SubForm = ({
         [field.name]:
           field.type === "select"
             ? field.options[0].value
-            : field.type === "number"
-              ? ""
-              : "",
+            : field.type === "checkbox"
+              ? false // Padrão para checkbox
+              : field.type === "number"
+                ? ""
+                : "",
       }),
       {
-        id: null, // Mudamos de Date.now() para null para novos itens
+        id: null,
         is_main: false,
       }
     )
@@ -71,6 +73,8 @@ const SubForm = ({
       if (field?.type === "number") {
         const numericValue = value.replace(/[^0-9]/g, "");
         newValue = numericValue;
+      } else if (field?.type === "checkbox") {
+        newValue = checked; // Sempre booleano para checkbox
       } else {
         newValue = type === "checkbox" ? checked : value;
       }
@@ -101,12 +105,14 @@ const SubForm = ({
           [field.name]:
             field.type === "select"
               ? field.options[0].value
-              : field.type === "number"
-                ? ""
-                : "",
+              : field.type === "checkbox"
+                ? false // Padrão para checkbox
+                : field.type === "number"
+                  ? ""
+                  : "",
         }),
         {
-          id: null, // Null para novos itens
+          id: null,
           is_main: false,
         }
       )
@@ -159,14 +165,18 @@ const SubForm = ({
   const handleEdit = useCallback(
     (index) => {
       const item = { ...items[index] };
-      // Converte campos numéricos para strings ao editar
       fields.forEach((field) => {
-        if (field.type === "number" && item[field.name] !== undefined) {
+        if (
+          field.type === "checkbox" &&
+          (item[field.name] == null || item[field.name] === "")
+        ) {
+          item[field.name] = false; // Garante false para checkbox indefinido
+        } else if (field.type === "number" && item[field.name] !== undefined) {
           item[field.name] = String(item[field.name]);
         }
       });
       setEditIndex(index);
-      setFormData(item); // O item já contém o id do banco de dados
+      setFormData(item);
       setIsOpen(true);
     },
     [items, fields]
@@ -201,12 +211,14 @@ const SubForm = ({
           [field.name]:
             field.type === "select"
               ? field.options[0].value
-              : field.type === "number"
-                ? ""
-                : "",
+              : field.type === "checkbox"
+                ? false // Padrão para checkbox
+                : field.type === "number"
+                  ? ""
+                  : "",
         }),
         {
-          id: null, // Null para novos itens
+          id: null,
           is_main: false,
         }
       )
@@ -354,8 +366,8 @@ const SubForm = ({
                         <div key={index} className="flex justify-center">
                           <CustomInput
                             type="checkbox"
-                            checked={item[field.name] || false}
-                            disabled={true}
+                            checked={item[field.name] ?? false} // Garante false para null/undefined
+                            disabled={field.readOnly || true}
                             className="justify-self-center"
                           />
                         </div>
@@ -422,8 +434,8 @@ const SubForm = ({
                             </span>
                             <CustomInput
                               type="checkbox"
-                              checked={item[field.name] || false}
-                              disabled={true}
+                              checked={item[field.name] ?? false} // Garante false para null/undefined
+                              disabled={field.readOnly || true}
                               className="absolute right-0 top-1/2 transform -translate-y-1/2"
                             />
                           </div>
@@ -453,7 +465,6 @@ const SubForm = ({
                           </div>
                         )
                       )}
-                      {/* Campo Principal com o mesmo estilo */}
                       <div className="relative w-full">
                         <span className="truncate w-fit text-light-muted dark:text-dark-muted">
                           Principal:
@@ -508,12 +519,14 @@ const SubForm = ({
                   [field.name]:
                     field.type === "select"
                       ? field.options[0].value
-                      : field.type === "number"
-                        ? ""
-                        : "",
+                      : field.type === "checkbox"
+                        ? false // Padrão para checkbox
+                        : field.type === "number"
+                          ? ""
+                          : "",
                 }),
                 {
-                  id: null, // Null para novos itens
+                  id: null,
                   is_main: false,
                 }
               )

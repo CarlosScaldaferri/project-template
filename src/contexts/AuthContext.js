@@ -15,10 +15,10 @@ export const AuthProvider = ({ children }) => {
   const { user: auth0UserRaw, isLoading: auth0LoadingRaw } = useUser();
   const auth0User = useMemo(() => auth0UserRaw, [auth0UserRaw?.sub]);
   const auth0Loading = useMemo(() => auth0LoadingRaw, [auth0LoadingRaw]);
-  const [user, setUser] = useState(null);
+  const [selfUser, setSelfUser] = useState(null);
   const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isFetched, setIsFetched] = useState(false);
+  const [isFetched, setIsFetched] = useState(false); // Mantém controle se já foi buscado
   const { request } = useApiService();
 
   const fetchUserData = useCallback(
@@ -27,7 +27,7 @@ export const AuthProvider = ({ children }) => {
 
       try {
         const data = await request(`/api/users/${id}`, { method: "GET" });
-        setUser({
+        setSelfUser({
           sub: data.sub,
           name: data.name || "",
           nickname: data.nickname || "",
@@ -44,11 +44,11 @@ export const AuthProvider = ({ children }) => {
           telephones: Array.isArray(data.telephone) ? data.telephone : [],
         });
         setError(null);
-        setIsFetched(true);
+        setIsFetched(true); // Marca como buscado
       } catch (err) {
         console.error("Erro ao carregar dados:", err);
         setError(err.message);
-        setIsFetched(true);
+        setIsFetched(true); // Mesmo em erro, marca como buscado
       } finally {
         setIsLoading(false);
       }
@@ -61,27 +61,22 @@ export const AuthProvider = ({ children }) => {
       if (!isLoading) setIsLoading(true);
       return;
     }
-
     if (auth0User?.sub && !isFetched) {
       fetchUserData(auth0User.sub);
-    } else if (!auth0User?.sub && !isFetched) {
-      setUser(null);
+    } else if (!auth0User?.sub) {
+      setSelfUser(null);
       setError(null);
       if (isLoading) setIsLoading(false);
-      setIsFetched(false);
+      // Não resetamos isFetched aqui para garantir que só rode uma vez por sessão
     }
   }, [auth0User?.sub]);
 
   const value = useMemo(
     () => ({
-      user,
-      error,
-      isLoading,
-      fetchUserData,
+      selfUser,
     }),
-    [user, error, isLoading]
+    [selfUser, error, isLoading]
   );
-
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 

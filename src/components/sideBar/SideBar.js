@@ -25,8 +25,10 @@ import { useSidebar } from "../../contexts/SidebarContext";
 import ThemeSwitcher from "../theme/ThemeSwitcher";
 import { FiEdit, FiLogOut, FiLogIn } from "react-icons/fi";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/hooks/useAuth";
+
 import Image from "next/image";
+import { Bell, User } from "lucide-react";
+import useSyncUser from "@/hooks/useSyncUser";
 
 const menuItems = [
   {
@@ -49,24 +51,49 @@ const menuItems = [
 const renderMenuItems = (items, depth = 0, onClick, expandedItems) => {
   return items.map((item) => (
     <div key={item.id}>
-      <ListItem disablePadding sx={{ pl: depth * 2 }}>
-        <ListItemButton onClick={() => onClick(item.id)}>
-          <ListItemIcon className="text-light-text dark:text-dark-text">
+      <ListItem
+        disablePadding
+        sx={{
+          pl: depth * 2,
+          width: "100%",
+        }}
+      >
+        <ListItemButton
+          onClick={() => onClick(item.id)}
+          sx={{
+            width: "100%",
+            justifyContent: "flex-start",
+            "&:hover": {
+              backgroundColor: "rgba(0, 0, 0, 0.04)",
+              ".dark &": {
+                backgroundColor: "rgba(255, 255, 255, 0.08)",
+              },
+            },
+          }}
+        >
+          <ListItemIcon
+            className="text-light-text dark:text-dark-text"
+            sx={{ minWidth: "auto", mr: "16px" }}
+          >
             {item.icon}
           </ListItemIcon>
           <ListItemText
             primary={item.title}
             className="text-light-text dark:text-dark-text"
+            sx={{ mx: 0 }}
           />
           {item.children && item.children.length > 0 && (
-            <ListItemIcon className="text-light-text dark:text-dark-text">
+            <ListItemIcon
+              className="text-light-text dark:text-dark-text"
+              sx={{ minWidth: "auto", ml: "16px" }}
+            >
               {expandedItems[item.id] ? <ExpandMore /> : <ChevronRight />}
             </ListItemIcon>
           )}
         </ListItemButton>
       </ListItem>
       {item.children && item.children.length > 0 && expandedItems[item.id] && (
-        <List sx={{ pl: 2 }}>
+        <List sx={{ width: "100%" }}>
           {renderMenuItems(item.children, depth + 1, onClick, expandedItems)}
         </List>
       )}
@@ -77,14 +104,16 @@ const renderMenuItems = (items, depth = 0, onClick, expandedItems) => {
 const SidebarComponent = () => {
   const { openSliderBar, setOpenSliderBar, openSideBar, setOpenSideBar } =
     useSidebar();
-  const { user } = useAuth();
   const router = useRouter();
   const [isMobile, setIsMobile] = useState(false);
   const [imageSrc, setImageSrc] = useState("/img/user/default-user.png");
   const [expandedItems, setExpandedItems] = useState({});
 
+  const { syncedUser } = useSyncUser();
+
   const loginSubItems = [
     { id: "edit_profile", title: "Editar perfil", icon: <FiEdit /> },
+    { id: "notifications", title: "Notificações", icon: <Bell /> },
     { id: "logout", title: "Sair", icon: <FiLogOut /> },
   ];
 
@@ -100,8 +129,11 @@ const SidebarComponent = () => {
               ...item.children,
               {
                 id: "user_menu",
-                title: user
-                  ? truncateText(user.nickname || user.name || "Usuário", 12)
+                title: syncedUser
+                  ? truncateText(
+                      syncedUser.nickname || syncedUser.name || "Usuário",
+                      17
+                    )
                   : "Usuário",
                 icon: imageSrc ? (
                   <Image
@@ -120,28 +152,28 @@ const SidebarComponent = () => {
           }
         : item
     );
-  }, [user, imageSrc, loginSubItems]);
+  }, [syncedUser, imageSrc]);
 
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 768);
-      setOpenSideBar(window.innerWidth >= 768 && !!user); // Só abre se usuário existir
+      setOpenSideBar(window.innerWidth >= 768 && !!syncedUser);
     };
     checkMobile();
     window.addEventListener("resize", checkMobile);
     return () => window.removeEventListener("resize", checkMobile);
-  }, [setOpenSideBar, user]);
+  }, [setOpenSideBar, syncedUser]);
 
   useEffect(() => {
-    if (user?.picture) {
-      setImageSrc(user.picture);
+    if (syncedUser?.picture) {
+      setImageSrc(syncedUser.picture);
     } else {
       setImageSrc("/img/user/default-user.png");
     }
-  }, [user?.picture]);
+  }, [syncedUser?.picture]);
 
   const handleLoginClick = () => {
-    router.push("/api/auth/login");
+    window.location.href = "/api/auth/login";
   };
 
   const handleMenuClick = useCallback(() => {
@@ -185,8 +217,8 @@ const SidebarComponent = () => {
       } else if (item) {
         switch (itemId) {
           case "edit_profile":
-            if (user?.sub) {
-              router.push("/users/" + user.sub);
+            if (syncedUser?.sub) {
+              router.push("/users/" + syncedUser.sub);
             } else {
               console.error("ID do usuário não disponível");
             }
@@ -213,7 +245,7 @@ const SidebarComponent = () => {
         setOpenSliderBar(null);
       }
     },
-    [dynamicMenuItems, openSliderBar, router, user?.sub, setOpenSliderBar]
+    [dynamicMenuItems, openSliderBar, router, syncedUser?.sub, setOpenSliderBar]
   );
 
   const handleSliderBarMouseLeave = useCallback(() => {
@@ -244,8 +276,7 @@ const SidebarComponent = () => {
     [setOpenSliderBar]
   );
 
-  // Se usuário for null ou undefined, mostra apenas o botão de login
-  if (!user) {
+  if (!syncedUser) {
     return (
       <div className="fixed left-4 top-4 z-50">
         <button
@@ -259,7 +290,6 @@ const SidebarComponent = () => {
     );
   }
 
-  // Se usuário existir, mostra a Sidebar
   return (
     <div className="flex relative">
       {!openSideBar && (
@@ -287,7 +317,10 @@ const SidebarComponent = () => {
         }}
       >
         <List className="flex flex-col h-full">
-          <ListItem disablePadding>
+          <ListItem
+            disablePadding
+            sx={{ borderBottom: 1, borderColor: "divider" }}
+          >
             <ListItemButton
               onClick={handleMenuClick}
               className="flex flex-col justify-center items-center gap-1 min-h-[32px] hover:bg-light-primary dark:hover:bg-dark-primary"
@@ -317,7 +350,10 @@ const SidebarComponent = () => {
             </ListItem>
           ))}
 
-          <ListItem disablePadding>
+          <ListItem
+            disablePadding
+            sx={{ borderBottom: 1, borderColor: "divider" }}
+          >
             <ListItemButton
               className="flex flex-col justify-center items-center gap-1 min-h-[64px] hover:bg-light-primary dark:hover:bg-dark-primary"
               onClick={() => handleMenuItemClick("settings")}
@@ -348,7 +384,21 @@ const SidebarComponent = () => {
               : "left-[-256px] opacity-0 pointer-events-none"
           }
         `}
-        sx={{ borderRight: 1, borderColor: "divider" }}
+        sx={{
+          borderRight: 1,
+          borderColor: "divider",
+          "& .MuiList-root": { padding: 0, width: "100%" },
+          "& .MuiListItem-root": { width: "100%", margin: 0 },
+          "& .MuiListItemButton-root": {
+            width: "100%",
+            margin: 0,
+            paddingRight: "16px",
+            "&:hover": {
+              backgroundColor: "rgba(0, 0, 0, 0.04)",
+              ".dark &": { backgroundColor: "rgba(255, 255, 255, 0.08)" },
+            },
+          },
+        }}
         onMouseLeave={handleSliderBarMouseLeave}
       >
         <List>
@@ -368,6 +418,7 @@ const SidebarComponent = () => {
   );
 };
 
+// Memoiza o componente para evitar re-renderizações desnecessárias
 const Sidebar = memo(SidebarComponent);
 
 export default Sidebar;

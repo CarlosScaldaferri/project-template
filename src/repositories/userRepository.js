@@ -17,6 +17,7 @@ export const dbFindUserBySub = async (sub, includeOptions = {}) => {
 };
 
 export const dbCreateUser = async (data) => {
+  console.log(JSON.stringify(data, null, 2));
   try {
     return await db.user.create({
       data: {
@@ -25,9 +26,18 @@ export const dbCreateUser = async (data) => {
         nickname: data.nickname,
         picture: data.picture,
         updated_at: data.updated_at || new Date(),
-        address: data.address ? { create: data.address } : undefined,
-        email: data.email ? { create: data.email } : undefined,
-        telephone: data.telephone ? { create: data.telephone } : undefined,
+        address:
+          data.address && data.address.create
+            ? { create: data.address.create }
+            : undefined,
+        email:
+          data.email && data.email.create
+            ? { create: data.email.create }
+            : undefined,
+        telephone:
+          data.telephone && data.telephone.create
+            ? { create: data.telephone.create }
+            : undefined,
       },
     });
   } catch (error) {

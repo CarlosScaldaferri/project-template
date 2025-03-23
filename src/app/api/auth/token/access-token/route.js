@@ -20,7 +20,7 @@ export async function GET(req) {
 
     return NextResponse.json({ accessToken });
   } catch (error) {
-    console.error("Error in /api/auth/token:", {
+    console.error("Error in /api/auth/token/access-token:", {
       message: error.message,
       stack: error.stack,
     });

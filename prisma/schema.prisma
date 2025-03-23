@@ -32,7 +32,7 @@ model address {
 model email {
   id             Int      @id @default(autoincrement())
   user_id        Int
-  email          String
+  email          String   @unique
   is_main        Boolean
   email_verified Boolean?
   user           user     @relation(fields: [user_id], references: [id])

@@ -5,8 +5,6 @@ import { UserProvider } from "@auth0/nextjs-auth0/client";
 import { SidebarProvider } from "@/contexts/SidebarContext";
 import Sidebar from "@/components/sideBar/SideBar";
 import MainProvider from "@/utils/MainProvider";
-import Header from "@/components/header/Header";
-import { HeaderProvider } from "@/contexts/HeaderContext";
 
 export const metadata = {
   title: "Create Next App",
@@ -38,13 +36,9 @@ export default function RootLayout({ children }) {
             <SidebarProvider>
               <div className="flex min-h-screen">
                 <Sidebar />
-                <HeaderProvider>
-                  <MainProvider>
-                    <Header />
-                    <main>{children}</main>{" "}
-                    {/* Adicionei <main> para maior clareza */}
-                  </MainProvider>
-                </HeaderProvider>
+                <MainProvider>
+                  <main>{children}</main>
+                </MainProvider>
               </div>
             </SidebarProvider>
           </AuthProviders>

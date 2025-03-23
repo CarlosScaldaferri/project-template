@@ -5,21 +5,34 @@ const useApiService = () => {
 
   const request = async (
     endpoint,
-    { method = "GET", data = null, headers = {} } = {}
+    {
+      method = "GET",
+      data = null,
+      headers = {},
+      baseUrl = process.env.NEXT_PUBLIC_BASE_URL,
+      token = null, // Novo parâmetro token com valor padrão null
+    } = {}
   ) => {
     const normalizedEndpoint = endpoint.startsWith("/")
       ? endpoint
       : `/${endpoint}`;
-    const url = `${process.env.NEXT_PUBLIC_BASE_URL}${normalizedEndpoint}`;
+    const url = `${baseUrl}${normalizedEndpoint}`;
+
+    // Usa o token passado por parâmetro, ou accessToken como fallback
+    const finalHeaders = {
+      "Content-Type": "application/json",
+      ...headers,
+      Authorization: token
+        ? `Bearer ${token}`
+        : accessToken
+          ? `Bearer ${accessToken}`
+          : undefined,
+    };
 
     try {
       const response = await fetch(url, {
         method,
-        headers: {
-          Authorization: accessToken ? `Bearer ${accessToken}` : undefined,
-          "Content-Type": "application/json",
-          ...headers,
-        },
+        headers: finalHeaders,
         body: data ? JSON.stringify(data) : undefined,
       });
 
@@ -27,7 +40,6 @@ const useApiService = () => {
         const errorData = await response.json().catch(() => ({}));
         let errorMessage;
 
-        // Diferenciação de erros baseada no status HTTP
         switch (response.status) {
           case 400:
             errorMessage = errorData.message || "Requisição inválida.";
@@ -53,18 +65,17 @@ const useApiService = () => {
         }
 
         const error = new Error(errorMessage);
-        error.status = response.status; // Adiciona o status ao erro para uso posterior, se necessário
+        error.status = response.status;
         throw error;
       }
 
       return response.json();
     } catch (error) {
-      // Captura erros de rede ou outros erros inesperados
       if (!error.status) {
         error.message = "Erro de rede. Verifique sua conexão.";
       }
       console.error(`Erro ao acessar ${url}:`, error);
-      throw error; // Re-throw para que o chamador possa tratar, se necessário
+      throw error;
     }
   };
 
