@@ -1,24 +1,24 @@
-import { useState } from "react";
+import PropTypes from "prop-types";
+import clsx from "clsx";
 
-const CustomSelect = ({
+const BASE_STYLES =
+  "w-full px-4 py-2 text-base bg-light-background-sidebar dark:bg-dark-background-sidebar text-light-text dark:text-dark-text border border-light-border dark:border-dark-border rounded-md focus:border-light-primary dark:focus:border-dark-primary focus:ring-2 focus:ring-light-primary dark:focus:ring-dark-primary focus:outline-none transition-all duration-200 ease-in-out disabled:bg-light-muted dark:disabled:bg-dark-muted disabled:cursor-not-allowed";
+
+export default function CustomSelect({
   label,
   name,
-  value,
+  value = "",
   onChange,
   disabled,
   options,
   className = "",
   error,
-}) => {
-  const [hasValue, setHasValue] = useState(value?.trim() !== "");
-
+}) {
   return (
-    <div className="relative flex flex-col">
+    <div className="flex flex-col">
       <label
         htmlFor={`input-${label}`}
-        className={`text-base text-light-primary dark:text-dark-primary ${
-          hasValue && "text-light-primary dark:text-dark-primary"
-        } transition-colors duration-200 ease-in-out`}
+        className="text-base text-light-primary dark:text-dark-primary transition-colors duration-200 ease-in-out"
       >
         {label}
       </label>
@@ -26,15 +26,13 @@ const CustomSelect = ({
         id={`input-${label}`}
         name={name}
         value={value}
-        onChange={(e) => {
-          setHasValue(e.target.value.trim() !== "");
-          onChange(e);
-        }}
-        onBlur={(e) => setHasValue(e.target.value.trim() !== "")}
+        onChange={onChange}
         disabled={disabled}
-        className={`w-full px-4 py-2 text-base bg-light-background-sidebar dark:bg-dark-background-sidebar text-light-text dark:text-dark-text border border-light-border dark:border-dark-border rounded-md focus:border-light-primary dark:focus:border-dark-primary focus:ring-2 focus:ring-light-primary dark:focus:ring-dark-primary focus:outline-none transition-all duration-200 ease-in-out disabled:bg-light-muted dark:disabled:bg-dark-muted disabled:cursor-not-allowed ${
-          error ? "border-light-danger dark:border-dark-danger" : ""
-        } ${className}`}
+        className={clsx(
+          BASE_STYLES,
+          error && "border-light-danger dark:border-dark-danger",
+          className
+        )}
       >
         {options.map((option) => (
           <option key={option.value} value={option.value}>
@@ -49,6 +47,20 @@ const CustomSelect = ({
       )}
     </div>
   );
-};
+}
 
-export default CustomSelect;
+CustomSelect.propTypes = {
+  label: PropTypes.string.isRequired,
+  name: PropTypes.string.isRequired,
+  value: PropTypes.string,
+  onChange: PropTypes.func.isRequired,
+  disabled: PropTypes.bool,
+  options: PropTypes.arrayOf(
+    PropTypes.shape({
+      value: PropTypes.string.isRequired,
+      label: PropTypes.string.isRequired,
+    })
+  ).isRequired,
+  className: PropTypes.string,
+  error: PropTypes.string,
+};

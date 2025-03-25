@@ -1,5 +1,5 @@
+import { createOrUpdateUser } from "@/services/userService";
 import { NextResponse } from "next/server";
-import { createOrUpdateUser } from "@/businnes/compoundRules/userCompoundRules";
 
 const mockUser = {
   name: "CARLOS EDUARDO CRUZEIRO SCALDAFERRI",
@@ -57,7 +57,6 @@ export const POST = async (req) => {
         { status: 400 }
       );
     }
-
     const result = await createOrUpdateUser(userData, isAuth0Sync);
     return NextResponse.json(result, { status: 200 });
   } catch (error) {

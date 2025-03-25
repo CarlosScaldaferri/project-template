@@ -1,49 +1,26 @@
+// src/businnes/services/userService.js
 import {
   dbCreateUser,
   dbFindUserBySub,
   dbGetAllUsers,
   dbUpdateUser,
 } from "@/repositories/userRepository";
+import * as userMapper from "@/businnes/mappers/userMapper";
+import { applyTelephoneMask } from "@/businnes/rules/generalRules";
 
 export const getAllUsers = () => {
   return dbGetAllUsers();
 };
 
 export const createUser = (user, isAuth0Sync) => {
+  let mappedUser;
   if (isAuth0Sync) {
-    const newUser = {
-      sub: user.sub,
-      name: user.name || null,
-      nickname: user.nickname || null,
-      picture: user.picture || null,
-      updated_at: user.updated_at || new Date(),
-      address: undefined,
-      telephone: undefined,
-      email: user.email
-        ? {
-            create: [
-              {
-                email: user.email,
-                is_main: true,
-                email_verified: user.email_verified || false,
-              },
-            ],
-          }
-        : undefined,
-    };
-    return dbCreateUser(newUser);
+    mappedUser = userMapper.mapAuth0UserToDbUser(user);
   } else {
-    return dbCreateUser({
-      sub: user.sub,
-      name: user.name,
-      nickname: user.nickname,
-      picture: user.picture,
-      updated_at: new Date(),
-      address: user.address || undefined,
-      email: user.email || undefined,
-      telephone: user.telephone || undefined,
-    });
+    mappedUser = userMapper.mapFormUserToDbUser(user);
   }
+
+  return dbCreateUser(mappedUser);
 };
 
 export const updateUser = async (user, isAuth0Sync = false) => {
@@ -235,147 +212,46 @@ export const findUserBySub = (sub, includeOptions = {}) => {
   return dbFindUserBySub(sub, includeOptions);
 };
 
-// utils/userMapper.js
-export const mapAuth0UserToDbUser = (auth0User) => {
-  const mapped = {
-    sub: auth0User.sub,
-    name: auth0User.name || null,
-    nickname: auth0User.nickname || null,
-    picture: auth0User.picture || null,
-    updated_at: new Date(),
-    email: auth0User.email
-      ? [
-          {
-            email: auth0User.email,
-            is_main: true,
-            email_verified: auth0User.email_verified || true,
-          },
-        ]
-      : undefined,
-    telephone: [],
-    address: [],
-  };
-  return mapped;
-};
-
-export const mapFormUserToAuth0User = (formUser) => {
-  const isSocialConnection = !formUser.sub?.startsWith("auth0|");
-  let auth0User;
-  if (!isSocialConnection) {
-    auth0User = {
-      nickname: formUser.nickname,
-      name: formUser.name,
-      picture: formUser.picture,
-      updated_at: formUser.updated_at,
-      user_metadata: {
-        birth_date: formUser.birth_date,
-        cpf: formUser.cpf,
-        telefhones: formUser.telephones || [],
-        emails: formUser.emails || [],
-        addresses: formUser.addresses || [],
-      },
-    };
+export const createOrUpdateUser = async (user, isAuth0Sync) => {
+  let tempUser = await findUserBySub(user.sub);
+  if (!tempUser) {
+    return createUser(user, isAuth0Sync);
   } else {
-    auth0User = {
-      user_metadata: {
-        nickname: formUser.nickname,
-        name: formUser.name,
-        picture: formUser.picture,
-        updated_at: formUser.updated_at,
-        birth_date: formUser.birth_date,
-        cpf: formUser.cpf,
-        telefhones: formUser.telephones || [],
-        emails: formUser.emails || [],
-        addresses: formUser.addresses || [],
-      },
-    };
+    return updateUser(user, isAuth0Sync);
   }
-
-  return auth0User;
 };
 
-export const mapFormUserToDbUser = (formUser) => {
-  const parseTelephone = (telephone) => {
-    if (!telephone || typeof telephone !== "string") return null;
-
-    const phoneRegex = /^\+(\d{2})\s\((\d{2})\)\s(\d{4,5}-\d{4})$/;
-    const match = telephone.match(phoneRegex);
-
-    if (match) {
-      const [, country_code, state_code, number] = match;
-      const full_number = `${country_code}${state_code}${number.replace("-", "")}`;
-      return {
-        country_code: parseInt(country_code, 10), // Converte para inteiro
-        state_code: parseInt(state_code, 10), // Converte para inteiro
-        number: parseInt(number.replace("-", ""), 10), // Remove hífen e converte
-        full_number, // Número completo sem máscara
-      };
-    }
-    return null;
-  };
-
-  const mappedTelephones = formUser.telephones
-    ? formUser.telephones.map((phone) => {
-        const parsedPhone = parseTelephone(phone.telephone);
-        if (!parsedPhone) {
-          return {
-            id: phone.id || undefined, // Inclui o id se existir, senão undefined
-            is_main: phone.is_main,
-            type: phone.type,
-            country_code: null,
-            state_code: null,
-            number: null,
-            full_number: null,
-          };
-        }
-        return {
-          id: phone.id || undefined, // Inclui o id se existir, senão undefined
-          is_main: phone.is_main,
-          type: phone.type,
-          ...parsedPhone,
-        };
-      })
-    : undefined;
-
-  const mappedEmails = formUser.emails
-    ? formUser.emails.map((email) => ({
-        id: email.id || undefined, // Inclui o id se existir, senão undefined
-        email: email.email,
-        is_main: email.is_main,
-        email_verified: email.email_verified,
-      }))
-    : undefined;
-
-  const mappedAddresses = formUser.addresses
-    ? formUser.addresses.map((address) => ({
-        id: address.id || undefined, // Inclui o id se existir, senão undefined
-        zip_code: address.zip_code,
-        street: address.street,
-        number: address.number ? parseInt(address.number, 10) : null, // Converte para inteiro
-        complement: address.complement,
-        district: address.district,
-        city: address.city,
-        state: address.state,
-        country: address.country,
-        is_main: address.is_main,
-      }))
-    : undefined;
-
-  const birthDate = formUser.birth_date
-    ? new Date(formUser.birth_date).toISOString()
-    : null;
-
-  const mapped = {
-    sub: formUser.sub,
-    name: formUser.name || null,
-    nickname: formUser.nickname || null,
-    picture: formUser.picture || null,
-    updated_at: new Date(),
-    birth_date: birthDate,
-    cpf: formUser.cpf || null,
-    email: mappedEmails,
-    telephone: mappedTelephones,
-    address: mappedAddresses,
-  };
-  return mapped;
+// src/businnes/services/userService.js
+export const fetchUserData = async (id, request, setUserData, setIsFetched) => {
+  try {
+    const data = await request(`/api/users/${id}`, { method: "GET" });
+    setUserData({
+      sub: data.sub,
+      name: data.name || "",
+      nickname: data.nickname || "",
+      picture: data.picture || "",
+      birth_date: data.birth_date
+        ? new Date(data.birth_date).toISOString().split("T")[0]
+        : "",
+      cpf: data.cpf || "",
+      addresses: Array.isArray(data.address) ? data.address : [],
+      emails: Array.isArray(data.email)
+        ? data.email.map((email) => ({
+            ...email,
+            email_verified: email.email_verified ?? false,
+          }))
+        : [],
+      telephones: Array.isArray(data.telephone)
+        ? data.telephone.map((phone) => ({
+            ...phone,
+            telephone: applyTelephoneMask(phone.full_number),
+          }))
+        : [],
+      connection: data.sub ? data.sub.split("|")[0] : null,
+    });
+    setIsFetched(true);
+  } catch (error) {
+    console.error("Erro ao carregar dados:", error);
+    setIsFetched(true);
+  }
 };

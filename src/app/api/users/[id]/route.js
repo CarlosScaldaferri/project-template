@@ -1,4 +1,4 @@
-import { findUserBySub } from "@/businnes/indivisibleRules/userRules";
+import { findUserBySub } from "@/services/userService";
 import { NextResponse } from "next/server";
 
 export async function GET(request, { params }) {

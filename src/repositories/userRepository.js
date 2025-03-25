@@ -99,6 +99,8 @@ export const dbUpdateUser = async (sub, data, isAuth0Sync = false) => {
       };
     }
 
+    console.log(sub, JSON.stringify(updateData, null, 2));
+
     return await db.user.update({
       where: { sub },
       data: updateData,
