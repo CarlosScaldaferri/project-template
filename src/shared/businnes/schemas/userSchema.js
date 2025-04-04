@@ -25,6 +25,26 @@ export const userSchema = Yup.object().shape({
     }),
   birth_date: Yup.date().required("Data de nascimento é obrigatória"),
   cpf: Yup.string().required("CPF é obrigatório"),
+  password: Yup.string().when("$isCreateMode", {
+    is: true,
+    then: (schema) =>
+      schema
+        .required("Senha é obrigatória")
+        .min(8, "Senha deve ter pelo menos 8 caracteres")
+        .matches(
+          /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/,
+          "Senha deve conter pelo menos uma letra maiúscula, uma minúscula, um número e um caractere especial"
+        ),
+    otherwise: (schema) => schema.notRequired(),
+  }),
+  password_confirmation: Yup.string().when("$isCreateMode", {
+    is: true,
+    then: (schema) =>
+      schema
+        .required("Confirmação de senha é obrigatória")
+        .oneOf([Yup.ref("password")], "As senhas devem coincidir"),
+    otherwise: (schema) => schema.notRequired(),
+  }),
   addresses: Yup.array()
     .of(
       Yup.object().shape({

@@ -12,15 +12,13 @@ import {
   setIsSubmitting,
   resetForm,
 } from "@/lib/features/user/userFormSlice";
-import Button from "@/frontend/components/form/button/CustomButton";
 import Form from "@/frontend/components/form/Form";
 import CustomInput from "@/frontend/components/form/input/CustomInput";
-import { FaEdit, FaMapMarkerAlt, FaEnvelope, FaPhone } from "react-icons/fa";
-import { MdPerson } from "react-icons/md";
+import { FaMapMarkerAlt, FaEnvelope, FaPhone } from "react-icons/fa";
+import { MdPerson, MdLock, MdEdit } from "react-icons/md";
 import SubForm from "@/frontend/components/form/subForm/SubForm";
 import PhotoField from "@/frontend/components/form/image/PhotoField";
 import useRequest from "@/frontend/hooks/useRequest";
-
 import {
   applyCPFMask,
   applyTelephoneMask,
@@ -28,9 +26,13 @@ import {
 import { userSchema } from "@/shared/businnes/schemas/userSchema";
 import UserService from "@/frontend/services/userService";
 import { mapApiUserToFormUser } from "@/frontend/businnes/mappers/userMapper";
+import { useRouter } from "next/navigation";
+import { EditIcon } from "lucide-react";
 
 export default function UserForm({ userId }) {
+  const router = useRouter();
   const dispatch = useDispatch();
+
   const { formData, previewImage, mode, isFetched, isSubmitting } = useSelector(
     (state) => state.userForm
   );
@@ -44,6 +46,7 @@ export default function UserForm({ userId }) {
       birth_date: "",
       cpf: "",
       password: "",
+      password_confirmation: "",
       addresses: [],
       emails: [],
       telephones: [],
@@ -66,6 +69,7 @@ export default function UserForm({ userId }) {
     defaultValues: formData,
     mode: "onChange",
     reValidateMode: "onChange",
+    context: { isCreateMode: mode === "create" },
   });
 
   const fetchUserDataHandler = useCallback(async () => {
@@ -112,10 +116,6 @@ export default function UserForm({ userId }) {
     defaultValues,
   ]);
 
-  useEffect(() => {
-    console.log("Erros atuais do formulário:", errors);
-  }, [errors]);
-
   const fetchAddressByCep = useCallback(
     (cep, fieldPath) => {
       const cleanedCep = String(cep).replace(/\D/g, "");
@@ -148,7 +148,7 @@ export default function UserForm({ userId }) {
           }),
         {
           loading: "Buscando endereço...",
-          ok: (msg) => msg,
+          success: (msg) => msg,
           error: (err) => err.message,
         }
       );
@@ -159,8 +159,7 @@ export default function UserForm({ userId }) {
   const onSubmit = useCallback(
     async (data) => {
       let tempFileId = null;
-
-      console.log("onSubmit chamado com dados:", data);
+      let operationSuccess = false;
 
       try {
         dispatch(setIsSubmitting(true));
@@ -180,7 +179,6 @@ export default function UserForm({ userId }) {
               uploadData?.message || "Falha no upload temporário"
             );
           }
-
           tempFileId = uploadData.fileId;
         }
 
@@ -215,6 +213,7 @@ export default function UserForm({ userId }) {
         }
 
         toast.success("Usuário salvo com sucesso!");
+        return true;
       } catch (err) {
         if (tempFileId) {
           await fetch("/api/img/delete-image", {
@@ -225,6 +224,7 @@ export default function UserForm({ userId }) {
         }
 
         toast.error(`Erro: ${err.message}`);
+        return false;
       } finally {
         dispatch(setIsSubmitting(false));
       }
@@ -232,16 +232,46 @@ export default function UserForm({ userId }) {
     [request, userId, setValue, dispatch]
   );
 
+  const handleAction = async (action) => {
+    try {
+      const isValid = await trigger();
+      if (!isValid) throw new Error("Formulário inválido");
+
+      const formData = getValues();
+      const success = await onSubmit(formData);
+
+      if (success && action) {
+        if (action === "new") {
+          reset(defaultValues);
+          window.location.href = "/user/register";
+        } else if (action === "close") {
+          window.history.back();
+        }
+      }
+
+      return success;
+    } catch (error) {
+      toast.error(error.message);
+      return false;
+    }
+  };
+
+  const handleSave = () => handleAction();
+  const handleSaveAndNew = () => handleAction("new");
+  const handleSaveAndClose = () => handleAction("close");
+  const handleCancel = () => window.history.back();
+  const handleClear = () => reset(defaultValues);
+
   return (
-    <div className="flex flex-col min-h-screen">
-      <header className="pl-4 pt-5 pb-10 bg-light-background-form-secondary dark:bg-dark-background-form-secondary border-b border-r border-light-border dark:border-dark-border">
-        <div className="flex items-center gap-2">
-          <FaEdit className="w-8 h-8 text-light-primary dark:text-dark-primary" />
+    <div className="flex p-5 flex-col min-h-screen bg-system-background-form dark:bg-dark-background-form">
+      <header className="pt-5 pb-5 border-b border-system-border dark:border-dark-border">
+        <div className="flex items-center gap-3">
+          <EditIcon className="w-16 h-16 text-system-primary dark:text-dark-primary" />
           <div>
-            <h1 className="text-xl font-bold">
+            <h1 className="text-[35px] text-system-text dark:text-dark-text">
               {mode === "create" ? "Criando usuário" : "Alterando usuário"}
             </h1>
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-system-muted dark:text-dark-muted">
               Preencha os dados abaixo para{" "}
               {mode === "create" ? "criar" : "alterar"} o perfil
             </p>
@@ -249,11 +279,21 @@ export default function UserForm({ userId }) {
         </div>
       </header>
 
-      <Form onSubmit={handleSubmit(onSubmit)}>
-        <main className="pl-2 pr-2 pb-2 pt-12 sm:pl-4 sm:pr-4 sm:pb-4 md:pl-6 md:pr-6 md:pb-6 mb-14 flex-1">
+      <Form
+        onSubmit={handleSubmit(onSubmit)}
+        isSubmitting={isSubmitting}
+        isDirty={isDirty}
+        onSave={handleSave}
+        onSaveAndNew={handleSaveAndNew}
+        onSaveAndClose={handleSaveAndClose}
+        onCancel={handleCancel}
+        onClear={handleClear}
+        showDefaultButtons={mode !== "view"}
+      >
+        <main className="pb-2 pt-12 sm:pb-4 md:pb-6 mb-14 flex-1">
           <section className="mb-14">
-            <h2 className="flex items-center gap-2 pb-4 text-lg sm:text-xl font-semibold text-light-text dark:text-dark-text border-b border-light-border dark:border-dark-border">
-              <MdPerson className="w-7 h-7 text-light-primary dark:text-dark-primary" />
+            <h2 className="flex items-center gap-2 pb-4 text-lg sm:text-xl text-system-text dark:text-dark-text border-b border-system-border dark:border-dark-border">
+              <MdPerson className="w-7 h-7 text-system-primary dark:text-dark-primary" />
               Informações Pessoais
             </h2>
             <div className="space-y-6 mt-2">
@@ -275,7 +315,7 @@ export default function UserForm({ userId }) {
                       {...field}
                       disabled={mode === "view" || isSubmitting}
                       error={errors.name?.message}
-                      className="w-full md:w-2/3"
+                      className="w-full md:w-[25rem]"
                     />
                   )}
                 />
@@ -288,7 +328,7 @@ export default function UserForm({ userId }) {
                       {...field}
                       disabled={mode === "view" || isSubmitting}
                       error={errors.nickname?.message}
-                      className="w-full md:w-1/3"
+                      className="w-full md:md:w-[25rem]"
                     />
                   )}
                 />
@@ -302,7 +342,7 @@ export default function UserForm({ userId }) {
                       {...field}
                       disabled={mode === "view" || isSubmitting}
                       error={errors.birth_date?.message}
-                      className="w-full md:w-fit"
+                      className="w-full md:md:w-[10rem]"
                     />
                   )}
                 />
@@ -321,11 +361,22 @@ export default function UserForm({ userId }) {
                       disabled={mode === "view" || isSubmitting}
                       maxLength={14}
                       error={errors.cpf?.message}
-                      className="w-full md:w-fit"
+                      className="w-full md:md:w-[10rem]"
                     />
                   )}
                 />
-                {mode === "create" && (
+              </div>
+            </div>
+          </section>
+
+          {mode === "create" && (
+            <section className="mb-14">
+              <h2 className="flex items-center gap-2 pb-4 text-lg sm:text-xl text-system-text dark:text-dark-text border-b border-system-border dark:border-dark-border">
+                <MdLock className="w-7 h-7 text-system-primary dark:text-dark-primary" />
+                Segurança
+              </h2>
+              <div className="space-y-6 mt-2">
+                <div className="flex flex-col gap-4">
                   <Controller
                     name="password"
                     control={control}
@@ -336,14 +387,30 @@ export default function UserForm({ userId }) {
                         {...field}
                         disabled={isSubmitting}
                         error={errors.password?.message}
-                        className="w-full md:w-1/3"
+                        placeholder="Digite sua senha"
+                        className="w-[15rem]"
                       />
                     )}
                   />
-                )}
+                  <Controller
+                    name="password_confirmation"
+                    control={control}
+                    render={({ field }) => (
+                      <CustomInput
+                        label="Confirmação de Senha"
+                        type="password"
+                        {...field}
+                        disabled={isSubmitting}
+                        error={errors.password_confirmation?.message}
+                        placeholder="Confirme sua senha"
+                        className="w-[15rem]"
+                      />
+                    )}
+                  />
+                </div>
               </div>
-            </div>
-          </section>
+            </section>
+          )}
 
           <div className="space-y-14">
             <SubForm
@@ -438,39 +505,6 @@ export default function UserForm({ userId }) {
             />
           </div>
         </main>
-
-        {mode !== "view" && (
-          <footer className="pl-4 pb-5 pt-10 flex gap-4 bg-light-background-form-secondary dark:bg-dark-background-form-secondary border-t border-light-border dark:border-dark-border">
-            <Button
-              type="button"
-              variant={"secondary"}
-              onClick={() => window.history.back()}
-              className="px-4 py-2"
-              disabled={isSubmitting}
-            >
-              Cancelar
-            </Button>
-            <Button
-              type="submit"
-              variant="primary"
-              className="px-4 py-2"
-              disabled={isSubmitting}
-              isLoading={isSubmitting}
-              onSubmit={(e) => {
-                console.log("Form submitted");
-                handleSubmit(onSubmit)(e).catch((err) => {
-                  console.error("Submission error:", err);
-                });
-              }}
-            >
-              {isSubmitting ? (
-                <>{userId ? "Atualizando..." : "Cadastrando..."}</>
-              ) : (
-                "Salvar"
-              )}
-            </Button>
-          </footer>
-        )}
       </Form>
     </div>
   );

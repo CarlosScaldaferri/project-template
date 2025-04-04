@@ -38,6 +38,7 @@ export const authOptions = {
           name: user.name,
           nickname: user.nickname,
           isAdmin: isAdmin,
+          picture: user.picture,
         };
       },
     }),
@@ -52,7 +53,9 @@ export const authOptions = {
         token.id = user.id;
         token.email = user.email;
         token.name = user.name;
-        (token.nickname = user.nickname), (token.isAdmin = user.isAdmin);
+        token.nickname = user.nickname;
+        token.isAdmin = user.isAdmin;
+        token.picture = user.picture;
       }
       return token;
     },
@@ -63,6 +66,7 @@ export const authOptions = {
       session.user.name = token.name;
       session.user.nickname = token.nickname;
       session.user.isAdmin = token.isAdmin;
+      session.user.picture = token.picture;
       return session;
     },
   },

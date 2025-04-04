@@ -1,11 +1,10 @@
 import PropTypes from "prop-types";
 import "./globals.css";
-
 import Sidebar from "@/frontend/components/sideBar/SideBar";
-
 import AuthProvider from "@/utils/AuthProvider";
 import { Toaster } from "react-hot-toast";
 import ReduxProvider from "@/utils/ReduxProvider";
+import { ThemeProvider } from "@/frontend/contexts/ThemeContext";
 
 export const metadata = {
   title: "Create Next App",
@@ -19,16 +18,18 @@ export default async function RootLayout({ children }) {
         <title>Meu Site</title>
         <meta name="description" content="Descrição do meu site" />
       </head>
-      <body className="font-sans bg-gradient-light dark:bg-gradient-dark text-light-text dark:text-dark-text">
-        <AuthProvider>
-          <Toaster position="top-right" />
-          <div className="flex min-h-screen">
-            <Sidebar />
-            <main>
-              <ReduxProvider>{children}</ReduxProvider>
-            </main>
-          </div>
-        </AuthProvider>
+      <body className="font-sans bg-system-background text-system-text dark:bg-dark-background dark:text-dark-text">
+        <ThemeProvider>
+          <AuthProvider>
+            <Toaster position="top-right" />
+            <div className="flex justify-center items-center">
+              <Sidebar />
+              <main className="p-4 md:p-10">
+                <ReduxProvider>{children}</ReduxProvider>
+              </main>
+            </div>
+          </AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

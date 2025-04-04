@@ -48,7 +48,7 @@ const SubForm = ({
         [field.name]:
           field.type === "select"
             ? field.options[0].value
-            : field.type === "date" // Added date type handling
+            : field.type === "date"
               ? null
               : field.type === "checkbox"
                 ? false
@@ -129,7 +129,7 @@ const SubForm = ({
     const fieldPath = `${name}.${index === null ? "temp" : index}`;
     return (
       <div
-        className={`w-full ${width} p-4 bg-light-background-form-secondary dark:bg-dark-background-form-secondary border border-light-accent dark:border-dark-border ${index !== null ? "max-w-full rounded-md" : "mt-2 rounded-b-md"}`}
+        className={`w-full ${width} p-4 border border-system-border dark:border-dark-border`}
       >
         <div className="grid grid-cols-[repeat(auto-fit,minmax(min(300px,100%),1fr))] gap-4 w-full">
           {fields
@@ -167,7 +167,6 @@ const SubForm = ({
                 }
               };
 
-              // Date field handling
               if (field.type === "date") {
                 return (
                   <CustomInput
@@ -178,12 +177,11 @@ const SubForm = ({
                     value={fieldValue ? fieldValue.substring(0, 10) : ""}
                     onChange={handleFieldChange}
                     error={fieldError}
-                    className="w-full text-light-text dark:text-dark-text"
+                    className="w-full text-system-text dark:text-dark-text"
                   />
                 );
               }
 
-              // Select field handling
               if (field.type === "select") {
                 return (
                   <CustomSelect
@@ -194,12 +192,11 @@ const SubForm = ({
                     onChange={handleFieldChange}
                     options={field.options}
                     error={fieldError}
-                    className="w-full text-light-text dark:text-dark-text"
+                    className="w-full text-system-text dark:text-dark-text"
                   />
                 );
               }
 
-              // Default input handling
               return (
                 <CustomInput
                   key={field.name}
@@ -209,7 +206,7 @@ const SubForm = ({
                   value={fieldValue}
                   onChange={handleFieldChange}
                   error={fieldError}
-                  className="w-full text-light-text dark:text-dark-text"
+                  className="w-full text-system-text dark:text-dark-text"
                   inputMode={field.type === "number" ? "numeric" : undefined}
                   pattern={field.type === "number" ? "[0-9]*" : undefined}
                 />
@@ -254,16 +251,16 @@ const SubForm = ({
   );
 
   return (
-    <section className="bg-light-background-form-primary dark:bg-dark-background-form-primary">
-      <div className="flex flex-col border-b border-light-border dark:border-dark-border">
+    <section>
+      <div className="flex flex-col border-b border-system-border dark:border-dark-border">
         <h2
-          className={`flex items-center gap-2 ${externalErrors ? "" : "pb-4"} text-lg sm:text-xl font-semibold text-light-text dark:text-dark-text`}
+          className={`flex items-center gap-2 ${externalErrors ? "" : "pb-4"} text-lg sm:text-xl text-system-text dark:text-dark-text`}
         >
-          <Icon className="w-5 h-5 sm:w-6 sm:h-6 text-light-primary dark:text-dark-primary" />
+          <Icon className="w-5 h-5 sm:w-6 sm:h-6 text-system-primary dark:text-dark-primary" />
           {title}
         </h2>
         {externalErrors && (
-          <span className="text-xs pb-4 sm:text-sm text-light-danger dark:text-dark-danger">
+          <span className="text-xs pb-4 sm:text-sm text-system-text-error dark:text-dark-text-error">
             {externalErrors}
           </span>
         )}
@@ -272,9 +269,9 @@ const SubForm = ({
       {items.length > 0 && (
         <div className={`pt-2 w-full ${width}`}>
           {/* Desktop grid */}
-          <div className="hidden md:block w-full text-light-text dark:text-dark-text bg-light-background dark:bg-dark-background rounded-b-md border border-light-border dark:border-dark-border">
+          <div className="hidden md:block w-full text-system-text-table dark:text-dark-text-table bg-system-background-table dark:bg-dark-background-table border border-system-border dark:border-dark-border">
             <div
-              className={`grid ${gridTemplateColumns} gap-x-4 border-b border-light-border dark:border-dark-border pb-2 text-xs sm:text-sm font-medium text-light-muted dark:text-dark-muted items-center bg-light-background-sidebar dark:bg-dark-background-sidebar`}
+              className={`grid ${gridTemplateColumns} gap-x-4 border-b border-system-border-table-header dark:border-dark-border-table-header pb-2 text-xs sm:text-sm font-medium text-system-text-table-header dark:text-dark-text-table-header items-center bg-system-background-table-header dark:bg-dark-background-table-header`}
               style={{ gridTemplateColumns }}
             >
               {fields.map((field) => (
@@ -288,11 +285,11 @@ const SubForm = ({
             {items.map((item, index) => (
               <div
                 key={item.internalId}
-                className={`even:bg-light-background-form-secondary dark:even:bg-dark-background-form-secondary hover:bg-light-accent dark:hover:bg-dark-accent ${index === items.length - 1 ? "border-b-0" : "border-b border-light-border dark:border-dark-border"}`}
+                className={`even:bg-system-background-form-secondary dark:even:bg-dark-background-form-secondary hover:bg-system-accent dark:hover:bg-dark-accent ${index === items.length - 1 ? "border-b-0" : "border-b border-system-border dark:border-dark-border"}`}
               >
                 {editIndex !== index ? (
                   <div
-                    className={`grid ${gridTemplateColumns} text-light-text dark:text-dark-text text-xs sm:text-sm items-center p-4`}
+                    className={`grid ${gridTemplateColumns} text-system-text-table dark:text-dark-text-table text-xs sm:text-sm items-center p-4`}
                     style={{ gridTemplateColumns }}
                   >
                     {fields.map((field) =>
@@ -332,14 +329,14 @@ const SubForm = ({
                       <button
                         type="button"
                         onClick={() => handleEdit(index)}
-                        className="text-light-primary dark:text-dark-primary hover:text-light-primary-dark dark:hover:text-dark-primary-dark"
+                        className="text-system-primary dark:text-dark-primary hover:text-system-primary-dark dark:hover:text-dark-primary-dark"
                       >
                         <FaEdit />
                       </button>
                       <button
                         type="button"
                         onClick={() => remove(index)}
-                        className="text-light-danger dark:text-dark-danger hover:text-light-danger-dark dark:hover:text-dark-danger-dark"
+                        className="text-system-danger dark:text-dark-danger hover:text-system-danger-dark dark:hover:text-dark-danger-dark"
                       >
                         <FiTrash2 />
                       </button>
@@ -353,11 +350,11 @@ const SubForm = ({
           </div>
 
           {/* Mobile cards */}
-          <div className="md:hidden w-full text-light-text dark:text-dark-text">
+          <div className="md:hidden w-full text-system-text-table dark:text-dark-text-table">
             {items.map((item, index) => (
               <div
                 key={item.internalId}
-                className={`p-4 mb-2 bg-light-background dark:bg-dark-background rounded-md border border-light-border dark:border-dark-border ${editIndex === index ? "bg-light-background-form-secondary dark:bg-dark-background-form-secondary" : ""}`}
+                className={`p-4 mb-2 bg-system-background-card dark:bg-dark-background-card rounded-md border border-system-border dark:border-dark-border ${editIndex === index ? "bg-system-background-form-secondary dark:bg-dark-background-form-secondary" : ""}`}
               >
                 {editIndex !== index ? (
                   <div>
@@ -366,7 +363,7 @@ const SubForm = ({
                         key={field.name}
                         className="mb-2 flex justify-between items-center"
                       >
-                        <span className="font-medium text-xs sm:text-sm text-light-muted dark:text-dark-muted">
+                        <span className="font-medium text-xs sm:text-sm text-system-text-table-header dark:text-dark-text-header">
                           {field.label}:
                         </span>
                         <div className="flex items-center">
@@ -396,7 +393,7 @@ const SubForm = ({
                       </div>
                     ))}
                     <div className="mb-2 flex justify-between items-center">
-                      <span className="font-medium text-xs sm:text-sm text-light-muted dark:text-dark-muted">
+                      <span className="font-medium text-xs sm:text-sm text-system-muted dark:text-dark-muted">
                         Principal:
                       </span>
                       <div className="flex items-center">
@@ -409,21 +406,21 @@ const SubForm = ({
                       </div>
                     </div>
                     <div className="mb-2 flex justify-between items-center">
-                      <span className="font-medium text-xs sm:text-sm text-light-muted dark:text-dark-muted">
+                      <span className="font-medium text-xs sm:text-sm text-system-muted dark:text-dark-muted">
                         Ações:
                       </span>
                       <div className="flex gap-2 justify-center">
                         <button
                           type="button"
                           onClick={() => handleEdit(index)}
-                          className="text-light-primary dark:text-dark-primary hover:text-light-primary-dark dark:hover:text-dark-primary-dark"
+                          className="text-system-primary dark:text-dark-primary hover:text-system-primary-dark dark:hover:text-dark-primary-dark"
                         >
                           <FaEdit />
                         </button>
                         <button
                           type="button"
                           onClick={() => remove(index)}
-                          className="text-light-danger dark:text-dark-danger hover:text-light-danger-dark dark:hover:text-dark-danger-dark"
+                          className="text-system-danger dark:text-dark-danger hover:text-system-danger-dark dark:hover:text-dark-danger-dark"
                         >
                           <FiTrash2 />
                         </button>
@@ -445,7 +442,7 @@ const SubForm = ({
         <button
           type="button"
           onClick={handleAdd}
-          className="pt-2 flex items-center gap-1 py-1 text-xs sm:text-sm text-light-primary dark:text-dark-primary hover:text-light-primary-dark dark:hover:text-dark-primary-dark"
+          className="pt-2 flex items-center gap-1 py-1 text-xs sm:text-sm text-system-primary dark:text-dark-primary hover:text-system-primary-dark dark:hover:text-dark-primary-dark"
         >
           <FaPlus /> Adicionar {title}
         </button>

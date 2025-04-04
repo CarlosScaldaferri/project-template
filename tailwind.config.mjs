@@ -17,45 +17,94 @@ export default {
         orbitron: ["Orbitron", "sans-serif"],
       },
       colors: {
+        // Tema System: Segue as cores do SO via prefers-color-scheme
+        system: {
+          background: "var(--background, #FFFFFF)",
+          "background-sidebar": "var(--background-sidebar, #F5F5F5)",
+          "background-form": "var(--background-form, #FFFFFF)",
+          "background-form-secondary":
+            "var(--background-form-secondary, #E5E7EB)",
+          "background-table": "var(--background-table, #F9FAFB)",
+
+          "background-card": "var(--background-card, #FFFFFF)",
+          text: "var(--text, #1F2937)",
+          "text-label": "var(--text-label, #4B5563)",
+          "text-placeholder": "var(--text-placeholder, #9CA3AF)",
+          "text-table": "var(--text-table, #374151)",
+          "text-button": "var(--text-button, #FFFFFF)",
+          "text-error": "var(--text-error, #DC2626)",
+          primary: "var(--primary, #3B82F6)",
+          "primary-dark": "var(--primary-dark, #1D4ED8)",
+          secondary: "var(--secondary, #10B981)",
+          "secondary-dark": "var(--secondary-dark, #047857)",
+          accent: "var(--accent, #6B7280)",
+          border: "var(--border, #D1D5DB)",
+          "border-focus": "var(--border-focus, #3B82F6)",
+          muted: "var(--muted, #6B7280)",
+          danger: "var(--danger, #EF4444)",
+          "danger-dark": "var(--danger-dark, #B91C1C)",
+          icon: "var(--icon, #4B5563)",
+        },
+        // Tema Light: Cores fixas para modo claro
         light: {
           background: "#FFFFFF",
           "background-sidebar": "#F5F5F5",
-          "background-form-primary": "#FFFFFF",
-          "background-form-secondary": "#E0E0E0",
-          text: "#212121",
-          primary: "#6200EE",
-          "primary-dark": "#3700B3",
-          secondary: "#03DAC6",
-          "secondary-dark": "#018786",
-          accent: "#757575",
-          border: "#9E9E9E",
-          muted: "#7D7D7D",
-          danger: "#B00020",
-          "danger-dark": "#790000",
+          "background-form": "#FFFFFF",
+          "background-form-secondary": "#E5E7EB",
+          "background-table": "#F9FAFB",
+          "background-table-header": "#EDEFF2",
+
+          "background-card": "#FFFFFF",
+          text: "#1F2937",
+          "text-label": "#4B5563",
+          "text-placeholder": "#9CA3AF",
+          "text-table": "#374151",
+          "text-button": "#FFFFFF",
+          "text-error": "#DC2626",
+          primary: "#3B82F6",
+          "primary-dark": "#1D4ED8",
+          secondary: "#10B981",
+          "secondary-dark": "#047857",
+          accent: "#6B7280",
+          border: "#D1D5DB",
+          "border-focus": "#3B82F6",
+          muted: "#6B7280",
+          danger: "#EF4444",
+          "danger-dark": "#B91C1C",
+          icon: "#4B5563",
         },
+        // Tema Dark: Cores fixas para modo escuro
         dark: {
-          background: "#1E2A38",
-          "background-sidebar": "#0F1722",
-          "background-form-primary": "#0A0F1A",
-          "background-form-secondary": "#2A3A4E",
-          text: "#E0E6ED",
-          primary: "#42A5F5",
-          "primary-dark": "#1976D2",
-          secondary: "#4FC3F7",
-          "secondary-dark": "#0288D1",
-          accent: "#90CAF9",
-          border: "#546E7A",
-          muted: "#78909C",
-          danger: "#EF5350",
-          "danger-dark": "#C62828",
+          background: "#1A202C", // Um cinza escuro mais suave
+          "background-sidebar": "#2D3748", // Tom mais claro e elegante para a sidebar
+          "background-form": "#2D3748", // Formulário com fundo mais distinto
+          "background-form-secondary": "#4A5568", // Secundário mais claro
+          "background-table": "#1F2937", // Mantido, mas ajustável
+          "background-table-header": "#374151", // Cabeçalho mais destacado
+          "background-card": "#2D3748", // Cards com fundo sutil
+
+          text: "#E2E8F0", // Texto claro, mas não puro branco
+          "text-label": "#A0AEC0", // Labels com tom mais suave
+          "text-placeholder": "#718096", // Placeholder discreto
+          "text-table": "#CBD5E0", // Texto da tabela com bom contraste
+          "text-button": "#FFFFFF", // Botões com texto branco puro
+          "text-error": "#F687B3", // Erro mais suave e legível
+
+          primary: "#63B3ED", // Azul mais vibrante e claro
+          "primary-dark": "#3182CE", // Tom escuro complementar
+          secondary: "#48BB78", // Verde mais natural
+          "secondary-dark": "#2F855A", // Verde escuro harmonioso
+          accent: "#A0AEC0", // Acentuação neutra
+          border: "#4A5568", // Bordas mais suaves
+          "border-focus": "#63B3ED", // Foco alinhado ao primary
+          muted: "#718096", // Tom apagado para elementos secundários
+          danger: "#F687B3", // Vermelho rosado, menos agressivo
+          "danger-dark": "#E53E3E", // Vermelho escuro mais intenso
+          icon: "#A0AEC0", // Ícones com tom neutro e claro
         },
-      },
-      backgroundImage: {
-        "gradient-light": "linear-gradient(180deg, #FFFFFF 0%, #F5F5F5 100%)",
-        "gradient-dark": "linear-gradient(180deg, #1E2A38 0%, #2A3A4E 100%)",
       },
     },
   },
   plugins: [],
-  darkMode: "class",
+  darkMode: "class", // Permite alternância manual via classe
 };

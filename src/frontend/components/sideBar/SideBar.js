@@ -9,6 +9,7 @@ import {
   ListItemIcon,
   ListItemText,
   Box,
+  Typography,
 } from "@mui/material";
 import {
   Home,
@@ -22,8 +23,8 @@ import {
   ChevronRight,
 } from "@mui/icons-material";
 import ThemeSwitcher from "../theme/ThemeSwitcher";
-import { FiEdit, FiLogOut, FiLogIn } from "react-icons/fi";
-import { useRouter, usePathname } from "next/navigation"; // Adicionado usePathname
+import { FiEdit, FiLogOut } from "react-icons/fi";
+import { useRouter, usePathname } from "next/navigation";
 import Image from "next/image";
 import { Bell, User } from "lucide-react";
 import { useSession, signOut } from "next-auth/react";
@@ -32,7 +33,7 @@ const menuItems = [
   {
     id: "home",
     title: "Home",
-    icon: <Home />,
+    icon: <Home fontSize="medium" />,
     children: [
       { id: "dashboard", title: "Dashboard", icon: <Dashboard /> },
       { id: "reports", title: "Reports", icon: <Assessment /> },
@@ -41,12 +42,18 @@ const menuItems = [
   {
     id: "users",
     title: "Usuários",
-    icon: <People />,
+    icon: <People fontSize="medium" />,
     children: [{ id: "all_users", title: "Listar usuários", icon: <Group /> }],
   },
 ];
 
-const renderMenuItems = (items, depth = 0, onClick, expandedItems) => {
+const renderMenuItems = (
+  items,
+  depth = 0,
+  onClick,
+  expandedItems,
+  parentTitle = ""
+) => {
   return items.map((item) => (
     <div key={item.id}>
       <ListItem
@@ -92,7 +99,13 @@ const renderMenuItems = (items, depth = 0, onClick, expandedItems) => {
       </ListItem>
       {item.children && item.children.length > 0 && expandedItems[item.id] && (
         <List sx={{ width: "100%" }}>
-          {renderMenuItems(item.children, depth + 1, onClick, expandedItems)}
+          {renderMenuItems(
+            item.children,
+            depth + 1,
+            onClick,
+            expandedItems,
+            parentTitle
+          )}
         </List>
       )}
     </div>
@@ -102,12 +115,14 @@ const renderMenuItems = (items, depth = 0, onClick, expandedItems) => {
 const SidebarComponent = () => {
   const [openSliderBar, setOpenSliderBar] = useState(false);
   const [openSideBar, setOpenSideBar] = useState(true);
+  const [currentMenuTitle, setCurrentMenuTitle] = useState("");
+  const [currentMenuIcon, setCurrentMenuIcon] = useState(null);
 
   const router = useRouter();
-  const pathname = usePathname(); // Adicionado para rastrear a rota atual
+  const pathname = usePathname();
   const [isMobile, setIsMobile] = useState(false);
   const [expandedItems, setExpandedItems] = useState({});
-  const [showButtons, setShowButtons] = useState(true); // Estado para controlar visibilidade dos botões
+  const [showButtons, setShowButtons] = useState(true);
   const { data: session, status } = useSession();
 
   const loginSubItems = useMemo(
@@ -136,13 +151,17 @@ const SidebarComponent = () => {
                 icon: session.user.picture ? (
                   <Image
                     className="rounded-full border border-spacing-1 border-primary-dark"
-                    src={session.user.picture}
+                    src={
+                      process.env.NEXT_PUBLIC_UPLOADS +
+                      "/" +
+                      session.user.picture
+                    }
                     alt="User"
-                    width={24}
-                    height={24}
+                    width={28}
+                    height={28}
                   />
                 ) : (
-                  <User size={24} />
+                  <User size={28} />
                 ),
                 children: loginSubItems,
               },
@@ -166,17 +185,24 @@ const SidebarComponent = () => {
   const handleMenuClick = useCallback(() => {
     setOpenSideBar(!openSideBar);
     setOpenSliderBar(null);
+    setCurrentMenuTitle("");
+    setCurrentMenuIcon(null);
   }, [openSideBar, setOpenSideBar, setOpenSliderBar]);
 
   const handleMenuItemClick = useCallback(
     (itemId) => {
       if (openSliderBar === itemId) {
         setOpenSliderBar(null);
+        setCurrentMenuTitle("");
+        setCurrentMenuIcon(null);
       } else if (openSideBar) {
         setOpenSliderBar(itemId);
+        const item = dynamicMenuItems.find((i) => i.id === itemId);
+        setCurrentMenuTitle(item?.title || "");
+        setCurrentMenuIcon(item?.icon || null);
       }
     },
-    [openSliderBar, openSideBar, setOpenSliderBar]
+    [openSliderBar, openSideBar, setOpenSliderBar, dynamicMenuItems]
   );
 
   const findItemById = (items, id) => {
@@ -223,6 +249,8 @@ const SidebarComponent = () => {
             break;
         }
         setOpenSliderBar(null);
+        setCurrentMenuTitle("");
+        setCurrentMenuIcon(null);
       }
     },
     [
@@ -236,15 +264,20 @@ const SidebarComponent = () => {
 
   const handleSliderBarMouseLeave = useCallback(() => {
     setOpenSliderBar(null);
+    setCurrentMenuTitle("");
+    setCurrentMenuIcon(null);
   }, [setOpenSliderBar]);
 
   const handleMenuItemMouseEnter = useCallback(
     (itemId) => {
       if (openSideBar) {
         setOpenSliderBar(itemId);
+        const item = dynamicMenuItems.find((i) => i.id === itemId);
+        setCurrentMenuTitle(item?.title || "");
+        setCurrentMenuIcon(item?.icon || null);
       }
     },
-    [openSideBar, setOpenSliderBar]
+    [openSideBar, setOpenSliderBar, dynamicMenuItems]
   );
 
   const handleMenuItemMouseLeave = useCallback(
@@ -257,24 +290,15 @@ const SidebarComponent = () => {
         !sliderbar.contains(relatedTarget)
       ) {
         setOpenSliderBar(null);
+        setCurrentMenuTitle("");
+        setCurrentMenuIcon(null);
       }
     },
     [setOpenSliderBar]
   );
 
-  const handleLoginClick = () => {
-    setShowButtons(false); // Esconde os botões ao clicar
-    router.push("/user/login");
-  };
-
-  const handleRegisterClick = () => {
-    setShowButtons(false); // Esconde os botões ao clicar
-    router.push("/user/register");
-  };
-
   return (
     <>
-      {/* Barra só aparece se logado */}
       {session && (
         <div className="flex relative">
           {!openSideBar && (
@@ -282,7 +306,7 @@ const SidebarComponent = () => {
               className="fixed left-4 top-4 z-50 p-2 bg-light-primary dark:bg-dark-primary rounded-full text-light-text dark:text-dark-text hover:bg-opacity-80"
               onClick={() => setOpenSideBar(true)}
             >
-              <MenuIcon />
+              <MenuIcon fontSize="medium" />
             </button>
           )}
 
@@ -290,10 +314,10 @@ const SidebarComponent = () => {
             variant="permanent"
             className="bg-light-background-sidebar dark:bg-dark-background-sidebar"
             sx={{
-              width: openSideBar ? "8rem" : "0",
+              width: openSideBar ? "4.5rem" : "0",
               flexShrink: 0,
               "& .MuiDrawer-paper": {
-                width: openSideBar ? "8rem" : "0",
+                width: openSideBar ? "4.5rem" : "0",
                 overflow: "hidden",
                 transition: "all 300ms ease-in-out",
                 backgroundColor: "inherit",
@@ -302,16 +326,25 @@ const SidebarComponent = () => {
             }}
           >
             <List className="flex flex-col h-full">
-              <ListItem
-                disablePadding
-                sx={{ borderBottom: 1, borderColor: "divider" }}
-              >
+              <ListItem disablePadding>
                 <ListItemButton
                   onClick={handleMenuClick}
-                  className="flex flex-col justify-center items-center gap-1 min-h-[32px] hover:bg-light-primary dark:hover:bg-dark-primary"
+                  className="flex flex-col justify-center items-center min-h-[4rem] hover:bg-light-primary dark:hover:bg-dark-primary"
+                  sx={{
+                    justifyContent: "center",
+                    alignItems: "center",
+                    padding: 0,
+                  }}
                 >
-                  <ListItemIcon className="flex items-center justify-center min-w-0 text-light-text dark:text-dark-text">
-                    <MenuIcon />
+                  <ListItemIcon
+                    sx={{
+                      minWidth: 0,
+                      display: "flex",
+                      justifyContent: "center",
+                      alignItems: "center",
+                    }}
+                  >
+                    <MenuIcon fontSize="medium" />
                   </ListItemIcon>
                 </ListItemButton>
               </ListItem>
@@ -319,41 +352,58 @@ const SidebarComponent = () => {
               {dynamicMenuItems.map((item) => (
                 <ListItem key={item.id} disablePadding>
                   <ListItemButton
-                    className="flex flex-col justify-center items-center gap-1 min-h-[64px] hover:bg-light-primary dark:hover:bg-dark-primary"
+                    className="flex flex-col justify-center items-center min-h-[4rem] hover:bg-light-primary dark:hover:bg-dark-primary"
                     onClick={() => handleMenuItemClick(item.id)}
                     onMouseEnter={() => handleMenuItemMouseEnter(item.id)}
                     onMouseLeave={handleMenuItemMouseLeave}
+                    sx={{
+                      justifyContent: "center",
+                      alignItems: "center",
+                      padding: 0,
+                    }}
                   >
-                    <ListItemIcon className="flex items-center justify-center min-w-0 text-light-text dark:text-dark-text">
+                    <ListItemIcon
+                      sx={{
+                        minWidth: 0,
+                        display: "flex",
+                        justifyContent: "center",
+                        alignItems: "center",
+                      }}
+                    >
                       {item.icon}
                     </ListItemIcon>
-                    <ListItemText
-                      primary={item.title}
-                      className="text-xs text-light-text dark:text-dark-text"
-                    />
                   </ListItemButton>
                 </ListItem>
               ))}
 
-              <ListItem
-                disablePadding
-                sx={{ borderBottom: 1, borderColor: "divider" }}
-              >
+              <ListItem disablePadding>
                 <ListItemButton
-                  className="flex flex-col justify-center items-center gap-1 min-h-[64px] hover:bg-light-primary dark:hover:bg-dark-primary"
+                  className="flex flex-col justify-center items-center min-h-[4rem] hover:bg-light-primary dark:hover:bg-dark-primary"
                   onClick={() => handleMenuItemClick("settings")}
-                  onMouseEnter={() =>
-                    openSideBar && setOpenSliderBar("settings")
-                  }
+                  onMouseEnter={() => {
+                    if (openSideBar) {
+                      setOpenSliderBar("settings");
+                      setCurrentMenuTitle("Configurações");
+                      setCurrentMenuIcon(<SettingsIcon fontSize="medium" />);
+                    }
+                  }}
                   onMouseLeave={handleMenuItemMouseLeave}
+                  sx={{
+                    justifyContent: "center",
+                    alignItems: "center",
+                    padding: 0,
+                  }}
                 >
-                  <ListItemIcon className="flex items-center justify-center min-w-0 text-light-text dark:text-dark-text">
-                    <SettingsIcon />
+                  <ListItemIcon
+                    sx={{
+                      minWidth: 0,
+                      display: "flex",
+                      justifyContent: "center",
+                      alignItems: "center",
+                    }}
+                  >
+                    <SettingsIcon fontSize="medium" />
                   </ListItemIcon>
-                  <ListItemText
-                    primary="Configurações"
-                    className="text-xs text-light-text dark:text-dark-text"
-                  />
                 </ListItemButton>
               </ListItem>
             </List>
@@ -365,7 +415,7 @@ const SidebarComponent = () => {
               transition-all duration-300 ease-in-out
               bg-light-background-sidebar dark:bg-dark-background-sidebar
               sliderbar
-              ${openSliderBar && openSideBar ? "left-[8rem] opacity-100 pointer-events-auto" : "left-[-256px] opacity-0 pointer-events-none"}
+              ${openSliderBar && openSideBar ? "left-[4.5rem] opacity-100 pointer-events-auto" : "left-[-256px] opacity-0 pointer-events-none"}
             `}
             sx={{
               borderRight: 1,
@@ -384,6 +434,44 @@ const SidebarComponent = () => {
             }}
             onMouseLeave={handleSliderBarMouseLeave}
           >
+            {currentMenuTitle && (
+              <Box
+                sx={{
+                  borderBottom: 1,
+                  borderColor: "divider",
+                  height: "4rem",
+                  display: "flex",
+                  alignItems: "center",
+                  padding: "0 16px",
+                  backgroundColor: "rgba(0, 0, 0, 0.02)",
+                  ".dark &": {
+                    backgroundColor: "rgba(255, 255, 255, 0.04)",
+                  },
+                  gap: "12px",
+                }}
+              >
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: "inherit",
+                  }}
+                >
+                  {currentMenuIcon}
+                </Box>
+                <Typography
+                  variant="h6"
+                  className="text-light-text dark:text-dark-text"
+                  sx={{
+                    fontWeight: 600,
+                    fontSize: "1.1rem",
+                  }}
+                >
+                  {currentMenuTitle}
+                </Typography>
+              </Box>
+            )}
             <List>
               {openSliderBar === "settings" && <ThemeSwitcher />}
               {openSliderBar &&
@@ -393,7 +481,8 @@ const SidebarComponent = () => {
                     ?.children || [],
                   0,
                   handleSubItemClick,
-                  expandedItems
+                  expandedItems,
+                  currentMenuTitle
                 )}
             </List>
           </Box>
