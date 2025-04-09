@@ -1,18 +1,18 @@
 "use client";
 import { useTheme } from "@/frontend/hooks/useTheme";
-import { Sun, Moon, Monitor } from "lucide-react";
+import { FiSun, FiMoon, FiMonitor } from "react-icons/fi";
 
 const ThemeSwitcher = () => {
   const { theme, setTheme } = useTheme();
 
   return (
-    <div className="flex items-center gap-4 p-2 rounded-lg bg-system-background-sidebar dark:bg-dark-background-sidebar shadow-sm">
+    <div className="flex items-center gap-2 p-2 rounded-lg bg-light-background-sidebar dark:bg-dark-background-sidebar shadow-sm">
       <button
         onClick={() => setTheme("system")}
-        className={`p-2 rounded-md transition-all duration-200 ${
+        className={`p-2 w-1/3 flex justify-center transition-all duration-200 ${
           theme === "system"
-            ? "bg-system-primary text-system-text-button shadow-md"
-            : "text-system-icon hover:bg-system-accent/20"
+            ? "bg-light-primary text-light-text-button shadow-md"
+            : "text-light-icon hover:bg-light-accent/20"
         } dark:${
           theme === "system"
             ? "bg-dark-primary text-dark-text-button"
@@ -21,15 +21,15 @@ const ThemeSwitcher = () => {
         aria-label="Usar tema do sistema"
         title="Tema do sistema"
       >
-        <Monitor className="w-5 h-5" />
+        <FiMonitor className="w-5 h-5" />
       </button>
 
       <button
         onClick={() => setTheme("light")}
-        className={`p-2 rounded-md transition-all duration-200 ${
+        className={`p-2 w-1/3 flex justify-center transition-all duration-200 ${
           theme === "light"
-            ? "bg-system-primary text-system-text-button shadow-md"
-            : "text-system-icon hover:bg-system-accent/20"
+            ? "bg-light-primary text-light-text-button shadow-md"
+            : "text-light-icon hover:bg-light-accent/20"
         } dark:${
           theme === "light"
             ? "bg-dark-primary text-dark-text-button"
@@ -38,15 +38,15 @@ const ThemeSwitcher = () => {
         aria-label="Usar tema claro"
         title="Tema claro"
       >
-        <Sun className="w-5 h-5" />
+        <FiSun className="w-5 h-5" />
       </button>
 
       <button
         onClick={() => setTheme("dark")}
-        className={`p-2 rounded-md transition-all duration-200 ${
+        className={`p-2 w-1/3 flex justify-center transition-all duration-200 ${
           theme === "dark"
-            ? "bg-system-primary text-system-text-button shadow-md"
-            : "text-system-icon hover:bg-system-accent/20"
+            ? "bg-light-primary text-light-text-button shadow-md"
+            : "text-light-icon hover:bg-light-accent/20"
         } dark:${
           theme === "dark"
             ? "bg-dark-primary text-dark-text-button"
@@ -55,7 +55,7 @@ const ThemeSwitcher = () => {
         aria-label="Usar tema escuro"
         title="Tema escuro"
       >
-        <Moon className="w-5 h-5" />
+        <FiMoon className="w-5 h-5" />
       </button>
     </div>
   );

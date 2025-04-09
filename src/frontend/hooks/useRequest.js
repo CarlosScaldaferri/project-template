@@ -1,105 +1,54 @@
 "use client";
+import { fetchRequest } from "@/shared/general/fetchRequest";
 import { useCallback, useState } from "react";
 
+/**
+ * Hook para fazer requisições à API
+ * @returns {Object} Objeto com funções e estados para fazer requisições
+ */
 const useRequest = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [isFetched, setIsFetched] = useState(false);
 
-  const request = useCallback(
-    async (
-      endpoint,
-      {
-        method = "GET",
-        data = null,
-        headers = {},
-        baseUrl = process.env.NEXT_PUBLIC_BASE_URL,
-      } = {}
-    ) => {
-      setIsLoading(true);
-      setError(null);
-      setIsFetched(false);
+  /**
+   * Função para fazer requisições à API
+   * @param {string} endpoint - Endpoint da API
+   * @param {Object} options - Opções da requisição
+   * @returns {Promise<Object>} Resposta da API no formato { ok, data, error }
+   */
+  const request = useCallback(async (endpoint, options = {}) => {
+    setIsLoading(true);
+    setError(null);
 
-      const normalizedEndpoint = endpoint.startsWith("/")
-        ? endpoint
-        : `/${endpoint}`;
-      const url = `${baseUrl}${normalizedEndpoint}`;
+    try {
+      console.log(`useRequest: Fazendo requisição para ${endpoint}`);
+      const response = await fetchRequest(endpoint, options);
+      console.log(`useRequest: Resposta recebida:`, response);
 
-      // Configuração dos headers
-      const finalHeaders = {
-        "Content-Type": "application/json",
-        ...headers,
-      };
-
-      // Configuração do fetch
-      const fetchOptions = {
-        method,
-        headers: finalHeaders,
-        body: data ? JSON.stringify(data) : undefined,
-      };
-
-      try {
-        const response = await fetch(url, fetchOptions);
-
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          let errorMessage;
-
-          switch (response.status) {
-            case 400:
-              errorMessage = errorData.message || "Requisição inválida.";
-              break;
-            case 401:
-              errorMessage =
-                errorData.message || "Não autorizado. Faça login novamente.";
-              break;
-            case 403:
-              errorMessage =
-                errorData.message || "Acesso negado a este recurso.";
-              break;
-            case 404:
-              errorMessage = errorData.message || "Recurso não encontrado.";
-              break;
-            case 500:
-              errorMessage =
-                errorData.message ||
-                "Erro no servidor. Tente novamente mais tarde.";
-              break;
-            default:
-              errorMessage =
-                errorData.message || `Erro na requisição: ${response.status}`;
-          }
-
-          const error = new Error(errorMessage);
-          error.status = response.status;
-          throw error;
-        }
-
-        const responseData = await response.json();
-        setIsFetched(true);
-        return responseData;
-      } catch (error) {
-        if (!error.status) {
-          error.message = "Erro de rede. Verifique sua conexão.";
-        }
-        console.error(`Erro ao acessar ${url}:`, error);
-        setError(error);
-        setIsFetched(true);
-        throw error;
-      } finally {
-        setIsLoading(false);
+      // Se houver um erro na resposta, atualiza o estado de erro
+      if (!response.ok && response.error) {
+        setError(new Error(response.error));
       }
-    },
-    [] // Mantemos na dependência, mas poderia remover se não usar
-  );
 
-  return {
-    request,
-    isLoading,
-    error,
-    isFetched,
-    setError,
-  };
+      return response;
+    } catch (err) {
+      console.error(`useRequest: Erro na requisição para ${endpoint}:`, err);
+
+      // Formata o erro para manter consistência
+      const formattedError = {
+        ok: false,
+        data: null,
+        error: err.message || "Erro na requisição",
+      };
+
+      setError(err);
+      return formattedError;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  return { request, isLoading, error };
 };
 
 export default useRequest;

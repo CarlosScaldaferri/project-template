@@ -1,3 +1,8 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+:root {
+  /* AJUSTE ESTE VALOR para a altura exata do seu Header */
+  --header-height: 4rem; /* Exemplo: 64px */
+}

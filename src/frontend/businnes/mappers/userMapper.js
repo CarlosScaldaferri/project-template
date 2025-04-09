@@ -1,7 +1,19 @@
-import bcrypt from "bcryptjs";
+/**
+ * Módulo de mapeamento de dados de usuário entre o formato do formulário e da API
+ * @module src/frontend/businnes/mappers/userMapper
+ */
 
-// src/frontend/businnes/mappers/userMapper.js
+/**
+ * Mapeia os dados do usuário do formato do formulário para o formato da API
+ * @param {Object} formUser - Dados do usuário no formato do formulário
+ * @returns {Object} Dados do usuário no formato da API
+ */
 export const mapFormUserToApiUser = (formUser) => {
+  /**
+   * Analisa uma string de telefone formatada e a converte para o formato da API
+   * @param {string} telephone - Telefone no formato "+XX (XX) XXXXX-XXXX"
+   * @returns {Object|null} Objeto com os componentes do telefone ou null se inválido
+   */
   const parseTelephone = (telephone) => {
     if (!telephone || typeof telephone !== "string") return null;
     const phoneRegex = /^\+(\d{2})\s\((\d{2})\)\s(\d{4,5}-\d{4})$/;
@@ -78,13 +90,18 @@ export const mapFormUserToApiUser = (formUser) => {
     updated_at: new Date(),
     birth_date: birthDate,
     cpf: formUser.cpf || null,
-    password: formUser.password ? bcrypt.hashSync(formUser.password) : null,
+    password: formUser.password || null,
     email: mappedEmails,
     telephone: mappedTelephones,
     address: mappedAddresses,
   };
 };
 
+/**
+ * Limpa os dados do usuário para o formato do formulário, removendo itens vazios
+ * @param {Object} data - Dados do usuário a serem limpos
+ * @returns {Object} Dados do usuário limpos
+ */
 export const cleanUserDataForForm = (data) => ({
   ...data,
   addresses:
@@ -97,10 +114,19 @@ export const cleanUserDataForForm = (data) => ({
     [],
 });
 
+/**
+ * Mapeia os dados do usuário do formato da API para o formato do formulário
+ * @param {Object} apiUser - Dados do usuário no formato da API
+ * @returns {Object|null} Dados do usuário no formato do formulário ou null se apiUser for null
+ */
 export const mapApiUserToFormUser = (apiUser) => {
   if (!apiUser) return null;
 
-  // Formata a data de nascimento para o formato YYYY-MM-DD (input type date)
+  /**
+   * Formata a data de nascimento para o formato YYYY-MM-DD (input type date)
+   * @param {string} dateString - Data de nascimento em formato ISO
+   * @returns {string} Data formatada ou string vazia se inválida
+   */
   const formatBirthDate = (dateString) => {
     if (!dateString) return "";
     const date = new Date(dateString);
@@ -113,7 +139,11 @@ export const mapApiUserToFormUser = (apiUser) => {
     return `${year}-${month}-${day}`;
   };
 
-  // Mapeia telefones para o formato do formulário
+  /**
+   * Mapeia telefones do formato da API para o formato do formulário
+   * @param {Array} telephones - Lista de telefones no formato da API
+   * @returns {Array} Lista de telefones no formato do formulário
+   */
   const mapTelephones = (telephones) => {
     if (!telephones || !Array.isArray(telephones)) return [];
 
@@ -127,7 +157,11 @@ export const mapApiUserToFormUser = (apiUser) => {
     }));
   };
 
-  // Mapeia emails para o formato do formulário
+  /**
+   * Mapeia emails do formato da API para o formato do formulário
+   * @param {Array} emails - Lista de emails no formato da API
+   * @returns {Array} Lista de emails no formato do formulário
+   */
   const mapEmails = (emails) => {
     if (!emails || !Array.isArray(emails)) return [];
 
@@ -139,7 +173,11 @@ export const mapApiUserToFormUser = (apiUser) => {
     }));
   };
 
-  // Mapeia endereços para o formato do formulário
+  /**
+   * Mapeia endereços do formato da API para o formato do formulário
+   * @param {Array} addresses - Lista de endereços no formato da API
+   * @returns {Array} Lista de endereços no formato do formulário
+   */
   const mapAddresses = (addresses) => {
     if (!addresses || !Array.isArray(addresses)) return [];
 
@@ -159,7 +197,11 @@ export const mapApiUserToFormUser = (apiUser) => {
     }));
   };
 
-  // Tratamento da imagem - converte para URL completa se necessário
+  /**
+   * Processa a imagem do usuário para garantir que seja uma URL completa
+   * @param {string|File|null} picture - Imagem do usuário (caminho relativo, URL completa ou objeto File)
+   * @returns {string|File|null} Imagem processada ou null se não houver imagem
+   */
   const processPicture = (picture) => {
     if (!picture) return null;
 

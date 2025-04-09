@@ -1,5 +1,9 @@
-// src/backend/services/userService.js
+/**
+ * Serviço de usuário para operações de backend
+ * @module src/backend/services/userService
+ */
 
+import bcrypt from "bcryptjs";
 import {
   dbCreateUser,
   dbGetAllUsers,
@@ -10,12 +14,32 @@ import {
 } from "../repositories/userRepository";
 
 class BackendUserService {
+  /**
+   * Busca todos os usuários
+   * @returns {Promise<Array>} Lista de usuários
+   */
   async getAllUsers() {
-    return dbGetAllUsers();
+    try {
+      return await dbGetAllUsers();
+    } catch (error) {
+      console.error("Erro ao buscar todos os usuários:", error.message);
+      throw new Error(`Falha ao buscar usuários: ${error.message}`);
+    }
   }
 
+  /**
+   * Cria um novo usuário
+   * @param {Object} apiUser - Dados do usuário a ser criado
+   * @returns {Promise<Object>} Objeto com status da operação e dados do usuário criado
+   */
   async createUser(apiUser) {
     try {
+      // Hash da senha se fornecida
+      if (apiUser.password) {
+        // Usar bcrypt assíncrono com salt 10
+        apiUser.password = await bcrypt.hash(apiUser.password, 10);
+      }
+
       const user = await dbCreateUser(apiUser);
       return { ok: true, data: user };
     } catch (error) {
@@ -24,176 +48,95 @@ class BackendUserService {
     }
   }
 
+  /**
+   * Atualiza um usuário existente
+   * @param {number|string} id - ID do usuário a ser atualizado
+   * @param {Object} userData - Dados do usuário a serem atualizados
+   * @returns {Promise<Object>} Objeto com status da operação e dados do usuário atualizado
+   */
   async updateUser(id, userData) {
-    const existingUser = await backendUserService.findUserById(id, {
-      address: true,
-      email: true,
-      telephone: true,
-    });
+    try {
+      const userId = Number(id);
+      if (isNaN(userId)) {
+        throw new Error("ID do usuário inválido para atualização");
+      }
 
-    if (!existingUser) {
-      throw new Error("Usuário não encontrado para atualização");
+      // Optional: Check if user exists before attempting update
+      // const existingUser = await this.findUserById(userId);
+      // if (!existingUser) {
+      //   throw new Error("Usuário não encontrado para atualização");
+      // }
+
+      // Directly pass userData to the refactored repository function
+      // The repository now handles the complexity using Prisma's 'set'
+      const updatedUser = await dbUpdateUser(userId, userData);
+
+      return { ok: true, data: updatedUser };
+    } catch (error) {
+      console.error(`Erro em updateUser (ID: ${id}):`, error);
+      // Consider more specific error handling/returning
+      return { ok: false, error: error.message };
     }
-
-    const getIds = (items) =>
-      items?.map((item) => item.id).filter(Boolean) || [];
-
-    const existingEmails = existingUser.email || [];
-    const newEmails = userData.email || [];
-    const newEmailIds = getIds(newEmails);
-    const emailsToDelete = existingEmails
-      .filter((e) => !newEmailIds.includes(e.id))
-      .map((e) => e.id);
-    const emailsToCreate = newEmails.filter((e) => !e.id);
-    const emailsToUpdate = newEmails.filter((e) => e.id);
-
-    const existingTelephones = existingUser.telephone || [];
-    const newTelephones = userData.telephone || [];
-    const newTelephoneIds = getIds(newTelephones);
-    const telephonesToDelete = existingTelephones
-      .filter((t) => !newTelephoneIds.includes(t.id))
-      .map((t) => t.id);
-    const telephonesToCreate = newTelephones.filter((t) => !t.id);
-    const telephonesToUpdate = newTelephones.filter((t) => t.id);
-
-    const existingAddresses = existingUser.address || [];
-    const newAddresses = userData.address || [];
-    const newAddressIds = getIds(newAddresses);
-    const addressesToDelete = existingAddresses
-      .filter((a) => !newAddressIds.includes(a.id))
-      .map((a) => a.id);
-    const addressesToCreate = newAddresses.filter((a) => !a.id);
-    const addressesToUpdate = newAddresses.filter((a) => a.id);
-
-    const updateData = {
-      name: userData.name ?? existingUser.name,
-      nickname: userData.nickname ?? existingUser.nickname,
-      picture: userData.picture ?? existingUser.picture,
-      birth_date: userData.birth_date ?? existingUser.birth_date,
-      cpf: userData.cpf ?? existingUser.cpf,
-      updated_at: new Date(),
-      email:
-        newEmails.length > 0
-          ? {
-              deleteMany:
-                emailsToDelete.length > 0
-                  ? { id: { in: emailsToDelete } }
-                  : undefined,
-              create:
-                emailsToCreate.length > 0
-                  ? emailsToCreate.map((e) => ({
-                      email: e.email,
-                      is_main: e.is_main,
-                      email_verified: e.email_verified,
-                    }))
-                  : undefined,
-              update:
-                emailsToUpdate.length > 0
-                  ? emailsToUpdate.map((e) => ({
-                      where: { id: e.id },
-                      data: {
-                        email: e.email,
-                        is_main: e.is_main,
-                        email_verified: e.email_verified,
-                      },
-                    }))
-                  : undefined,
-            }
-          : undefined,
-      telephone:
-        newTelephones.length > 0
-          ? {
-              deleteMany:
-                telephonesToDelete.length > 0
-                  ? { id: { in: telephonesToDelete } }
-                  : undefined,
-              create:
-                telephonesToCreate.length > 0
-                  ? telephonesToCreate.map((t) => ({
-                      country_code: t.country_code,
-                      state_code: t.state_code,
-                      number: t.number,
-                      full_number: t.full_number,
-                      type: t.type,
-                      is_main: t.is_main,
-                    }))
-                  : undefined,
-              update:
-                telephonesToUpdate.length > 0
-                  ? telephonesToUpdate.map((t) => ({
-                      where: { id: t.id },
-                      data: {
-                        country_code: t.country_code,
-                        state_code: t.state_code,
-                        number: t.number,
-                        full_number: t.full_number,
-                        type: t.type,
-                        is_main: t.is_main,
-                      },
-                    }))
-                  : undefined,
-            }
-          : undefined,
-      address:
-        newAddresses.length > 0
-          ? {
-              deleteMany:
-                addressesToDelete.length > 0
-                  ? { id: { in: addressesToDelete } }
-                  : undefined,
-              create:
-                addressesToCreate.length > 0
-                  ? addressesToCreate.map((a) => ({
-                      zip_code: a.zip_code,
-                      street: a.street,
-                      number: a.number,
-                      complement: a.complement,
-                      district: a.district,
-                      city: a.city,
-                      state: a.state,
-                      country: a.country,
-                      is_main: a.is_main,
-                    }))
-                  : undefined,
-              update:
-                addressesToUpdate.length > 0
-                  ? addressesToUpdate.map((a) => ({
-                      where: { id: a.id },
-                      data: {
-                        zip_code: a.zip_code,
-                        street: a.street,
-                        number: a.number,
-                        complement: a.complement,
-                        district: a.district,
-                        city: a.city,
-                        state: a.state,
-                        country: a.country,
-                        is_main: a.is_main,
-                      },
-                    }))
-                  : undefined,
-            }
-          : undefined,
-    };
-
-    Object.keys(updateData).forEach(
-      (key) => updateData[key] === undefined && delete updateData[key]
-    );
-    const userId = Number(id);
-
-    const updatedUser = await dbUpdateUser(userId, updateData);
-
-    return { ok: true, data: updatedUser };
   }
 
+  /**
+   * Busca um usuário pelo email
+   * @param {string} email - Email do usuário
+   * @returns {Promise<Object|null>} Usuário encontrado ou null
+   * @throws {Error} Erro ao buscar usuário por email
+   */
   async findUserByEmail(email) {
-    return dbFindUserByEmail(email);
+    try {
+      if (!email) {
+        throw new Error("Email não fornecido");
+      }
+
+      return await dbFindUserByEmail(email);
+    } catch (error) {
+      console.error(
+        `Erro ao buscar usuário por email (${email}):`,
+        error.message
+      );
+      throw new Error(`Falha ao buscar usuário por email: ${error.message}`);
+    }
   }
 
+  /**
+   * Verifica se um usuário tem papel de administrador
+   * @param {number} id - ID do usuário
+   * @returns {Promise<boolean>} true se o usuário é admin, false caso contrário
+   * @throws {Error} Erro ao verificar se o usuário é administrador
+   */
   async userIsAdmin(id) {
-    return dbUserIsAdmin(id);
+    try {
+      if (!id) {
+        throw new Error("ID do usuário não fornecido");
+      }
+
+      const userId = Number(id);
+      if (isNaN(userId)) {
+        throw new Error("ID do usuário inválido");
+      }
+
+      return await dbUserIsAdmin(userId);
+    } catch (error) {
+      console.error(
+        `Erro ao verificar se usuário é admin (ID: ${id}):`,
+        error.message
+      );
+      throw new Error(
+        `Falha ao verificar permissões do usuário: ${error.message}`
+      );
+    }
   }
 
+  /**
+   * Busca um usuário pelo ID
+   * @param {number|string} id - ID do usuário
+   * @param {Object} includeOptions - Opções para incluir relações
+   * @returns {Promise<Object|null>} Usuário encontrado ou null
+   * @throws {Error} Erro ao buscar usuário por ID
+   */
   async findUserById(id, includeOptions = {}) {
     try {
       if (!id) {
@@ -205,19 +148,54 @@ class BackendUserService {
         throw new Error("ID do usuário inválido");
       }
 
-      return await dbFindUserById(userId, includeOptions);
+      const user = await dbFindUserById(userId, includeOptions);
+
+      // Não lançamos erro se o usuário não for encontrado, apenas retornamos null
+      // Isso permite que o chamador decida como lidar com a ausência do usuário
+      return user;
     } catch (error) {
-      console.error("Erro no serviço ao buscar usuário por ID:", error);
-      throw error; // Propague o erro para ser tratado na rota
+      console.error(`Erro ao buscar usuário por ID (${id}):`, error.message);
+      throw new Error(`Falha ao buscar usuário: ${error.message}`);
     }
   }
 
+  /**
+   * Cria ou atualiza um usuário dependendo se ele já existe
+   * @param {Object} apiUser - Dados do usuário a ser criado ou atualizado
+   * @returns {Promise<Object>} Objeto com status da operação e dados do usuário
+   * @throws {Error} Erro ao criar ou atualizar usuário
+   */
   async createOrUpdateUser(apiUser) {
-    const tempUser = await this.findUserById(apiUser.id);
-    if (!tempUser) {
-      return this.createUser(apiUser);
+    try {
+      if (!apiUser) {
+        throw new Error("Dados do usuário não fornecidos");
+      }
+
+      if (!apiUser.id) {
+        throw new Error("ID do usuário não fornecido para criação/atualização");
+      }
+
+      // Verifica se o usuário existe
+      const tempUser = await this.findUserById(apiUser.id);
+
+      if (!tempUser) {
+        // Se o usuário não existe, cria um novo (createUser já faz o hash da senha)
+        return this.createUser(apiUser);
+      }
+
+      // Se o usuário existe, atualiza
+      // Nota: updateUser não faz hash da senha, pois a senha só pode ser alterada via fluxo específico
+      return this.updateUser(apiUser.id, apiUser);
+    } catch (error) {
+      console.error(
+        `Erro ao criar/atualizar usuário (ID: ${apiUser?.id}):`,
+        error.message
+      );
+      return {
+        ok: false,
+        error: `Falha ao criar/atualizar usuário: ${error.message}`,
+      };
     }
-    return this.updateUser(apiUser.id, apiUser);
   }
 }
 

@@ -219,7 +219,7 @@ const PhotoField = ({
 
   return (
     <div className="flex flex-col gap-2">
-      <label className="text-base text-system-text-label dark:text-dark-text-label">
+      <label className="text-base text-light-text-label dark:text-dark-text-label">
         {label}
       </label>
       <Controller
@@ -253,7 +253,7 @@ const PhotoField = ({
               )}
             </div>
             {error?.message && (
-              <span className="text-system-text-error dark:text-dark-text-error text-sm">
+              <span className="text-light-text-error dark:text-dark-text-error text-sm">
                 {error.message}
               </span>
             )}
@@ -269,8 +269,8 @@ const PhotoField = ({
             {/* Modal de Opções */}
             {showOptionsModal && (
               <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
-                <div className="bg-system-background-form dark:bg-dark-background-form rounded-lg p-6 max-w-md w-full">
-                  <h3 className="text-lg font-medium mb-4 text-system-text dark:text-dark-text">
+                <div className="bg-light-background-form dark:bg-dark-background-form rounded-lg p-6 max-w-md w-full">
+                  <h3 className="text-lg font-medium mb-4 text-light-text dark:text-dark-text">
                     Alterar Foto
                   </h3>
                   {previewImage && (
@@ -286,21 +286,21 @@ const PhotoField = ({
                   <div className="flex flex-col gap-4">
                     <button
                       type="button"
-                      className="px-4 py-2 bg-system-primary dark:bg-dark-primary text-system-text-button dark:text-dark-text-button rounded hover:bg-system-primary-dark dark:hover:bg-dark-primary-dark flex items-center gap-2 justify-center"
+                      className="px-4 py-2 bg-light-primary dark:bg-dark-primary text-light-text-button dark:text-dark-text-button rounded hover:bg-light-primary-dark dark:hover:bg-dark-primary-dark flex items-center gap-2 justify-center"
                       onClick={() => fileInputRef.current.click()}
                     >
                       Buscar no PC
                     </button>
                     <button
                       type="button"
-                      className="px-4 py-2 bg-system-primary dark:bg-dark-primary text-system-text-button dark:text-dark-text-button rounded hover:bg-system-primary-dark dark:hover:bg-dark-primary-dark flex items-center gap-2 justify-center"
+                      className="px-4 py-2 bg-light-primary dark:bg-dark-primary text-light-text-button dark:text-dark-text-button rounded hover:bg-light-primary-dark dark:hover:bg-dark-primary-dark flex items-center gap-2 justify-center"
                       onClick={startCamera}
                     >
                       <FaCamera /> Tirar Foto
                     </button>
                     <button
                       type="button"
-                      className="px-4 py-2 bg-system-muted dark:bg-dark-muted rounded hover:bg-system-accent dark:hover:bg-dark-accent flex items-center gap-2 justify-center"
+                      className="px-4 py-2 bg-light-muted dark:bg-dark-muted rounded hover:bg-light-accent dark:hover:bg-dark-accent flex items-center gap-2 justify-center"
                       onClick={() => setShowOptionsModal(false)}
                     >
                       <FaTimes /> Cancelar
@@ -313,8 +313,8 @@ const PhotoField = ({
             {/* Modal de Câmera */}
             {showCameraModal && (
               <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
-                <div className="bg-system-background-form dark:bg-dark-background-form rounded-lg p-6 max-w-lg w-full">
-                  <h3 className="text-lg font-medium mb-4 text-system-text dark:text-dark-text">
+                <div className="bg-light-background-form dark:bg-dark-background-form rounded-lg p-6 max-w-lg w-full">
+                  <h3 className="text-lg font-medium mb-4 text-light-text dark:text-dark-text">
                     Tirar Foto
                   </h3>
                   <video
@@ -325,14 +325,14 @@ const PhotoField = ({
                   <div className="flex justify-end gap-2">
                     <button
                       type="button"
-                      className="px-4 py-2 bg-system-muted dark:bg-dark-muted rounded hover:bg-system-accent dark:hover:bg-dark-accent flex items-center gap-2"
+                      className="px-4 py-2 bg-light-muted dark:bg-dark-muted rounded hover:bg-light-accent dark:hover:bg-dark-accent flex items-center gap-2"
                       onClick={stopCamera}
                     >
                       <FaTimes /> Cancelar
                     </button>
                     <button
                       type="button"
-                      className="px-4 py-2 bg-system-primary dark:bg-dark-primary text-system-text-button dark:text-dark-text-button rounded hover:bg-system-primary-dark dark:hover:bg-dark-primary-dark flex items-center gap-2"
+                      className="px-4 py-2 bg-light-primary dark:bg-dark-primary text-light-text-button dark:text-dark-text-button rounded hover:bg-light-primary-dark dark:hover:bg-dark-primary-dark flex items-center gap-2"
                       onClick={capturePhoto}
                     >
                       <FaCamera /> Capturar
@@ -346,13 +346,13 @@ const PhotoField = ({
             {showCropModal && (
               <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-2">
                 <div
-                  className="bg-system-background-form dark:bg-dark-background-form rounded-lg p-4 flex flex-col gap-2 w-full"
+                  className="bg-light-background-form dark:bg-dark-background-form rounded-lg p-4 flex flex-col gap-2 w-full"
                   style={{
                     width: `${Math.min(imageDimensions.width + 32, 300)}px`,
                     height: "auto",
                   }}
                 >
-                  <h3 className="text-lg font-medium text-system-text dark:text-dark-text">
+                  <h3 className="text-lg font-medium text-light-text dark:text-dark-text">
                     Ajustar Imagem
                   </h3>
                   <div
@@ -375,7 +375,7 @@ const PhotoField = ({
                     {crop && (
                       <div
                         ref={cropRef}
-                        className="absolute border-2 border-system-primary dark:border-dark-primary bg-black bg-opacity-20"
+                        className="absolute border-2 border-light-primary dark:border-dark-primary bg-black bg-opacity-20"
                         style={{
                           left: `${crop.x}px`,
                           top: `${crop.y}px`,
@@ -416,7 +416,7 @@ const PhotoField = ({
                         }}
                       >
                         <div
-                          className="absolute w-3 h-3 bg-system-primary dark:bg-dark-primary rounded-full -top-1 -left-1 cursor-nwse-resize"
+                          className="absolute w-3 h-3 bg-light-primary dark:bg-dark-primary rounded-full -top-1 -left-1 cursor-nwse-resize"
                           onMouseDown={(e) => {
                             const startX = e.clientX;
                             const startY = e.clientY;
@@ -460,7 +460,7 @@ const PhotoField = ({
                           }}
                         />
                         <div
-                          className="absolute w-3 h-3 bg-system-primary dark:bg-dark-primary rounded-full -top-1 -right-1 cursor-nesw-resize"
+                          className="absolute w-3 h-3 bg-light-primary dark:bg-dark-primary rounded-full -top-1 -right-1 cursor-nesw-resize"
                           onMouseDown={(e) => {
                             const startX = e.clientX;
                             const startY = e.clientY;
@@ -501,7 +501,7 @@ const PhotoField = ({
                           }}
                         />
                         <div
-                          className="absolute w-3 h-3 bg-system-primary dark:bg-dark-primary rounded-full -bottom-1 -left-1 cursor-nesw-resize"
+                          className="absolute w-3 h-3 bg-light-primary dark:bg-dark-primary rounded-full -bottom-1 -left-1 cursor-nesw-resize"
                           onMouseDown={(e) => {
                             const startX = e.clientX;
                             const startY = e.clientY;
@@ -544,7 +544,7 @@ const PhotoField = ({
                           }}
                         />
                         <div
-                          className="absolute w-3 h-3 bg-system-primary dark:bg-dark-primary rounded-full -bottom-1 -right-1 cursor-nwse-resize"
+                          className="absolute w-3 h-3 bg-light-primary dark:bg-dark-primary rounded-full -bottom-1 -right-1 cursor-nwse-resize"
                           onMouseDown={(e) => {
                             const startX = e.clientX;
                             const startY = e.clientY;
@@ -588,10 +588,10 @@ const PhotoField = ({
                   </div>
                   <div className="flex flex-col gap-2 items-start">
                     <div className="flex flex-col items-start">
-                      <div className="text-sm mb-1 text-system-text dark:text-dark-text">
+                      <div className="text-sm mb-1 text-light-text dark:text-dark-text">
                         Preview (128x128px)
                       </div>
-                      <div className="border border-system-border dark:border-dark-border rounded overflow-hidden">
+                      <div className="border border-light-border dark:border-dark-border rounded overflow-hidden">
                         <canvas
                           ref={previewCanvasRef}
                           width="128"
@@ -603,14 +603,14 @@ const PhotoField = ({
                     <div className="flex gap-2">
                       <button
                         type="button"
-                        className="px-3 py-1 bg-system-muted dark:bg-dark-muted rounded hover:bg-system-accent dark:hover:bg-dark-accent flex items-center gap-1 text-sm text-system-text dark:text-dark-text"
+                        className="px-3 py-1 bg-light-muted dark:bg-dark-muted rounded hover:bg-light-accent dark:hover:bg-dark-accent flex items-center gap-1 text-sm text-light-text dark:text-dark-text"
                         onClick={() => setShowCropModal(false)}
                       >
                         <FaTimes /> Cancelar
                       </button>
                       <button
                         type="button"
-                        className="px-3 py-1 bg-system-primary dark:bg-dark-primary text-system-text-button dark:text-dark-text-button rounded hover:bg-system-primary-dark dark:hover:bg-dark-primary-dark flex items-center gap-1 text-sm"
+                        className="px-3 py-1 bg-light-primary dark:bg-dark-primary text-light-text-button dark:text-dark-text-button rounded hover:bg-light-primary-dark dark:hover:bg-dark-primary-dark flex items-center gap-1 text-sm"
                         onClick={() => handleSaveCrop(onChange)}
                       >
                         <FaCheck /> Salvar

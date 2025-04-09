@@ -1,0 +1,32 @@
+{
+  "React Functional Component JS (Name First - rfc)": {
+    "prefix": "rfc",
+    "body": [
+      "import React from 'react';",
+      "import PropTypes from 'prop-types';",
+      "",
+      // $1 é usado para o nome do componente, com o nome do arquivo como padrão
+      "const ${1:${TM_FILENAME_BASE}} = ({ $2 }) => {",
+      "\treturn (",
+      "\t\t<div>",
+      "\t\t\t$0", // Posição final do cursor
+      "\t\t</div>",
+      "\t);",
+      "};",
+      "",
+      // O nome do componente no propTypes também usa $1
+      "${1:${TM_FILENAME_BASE}}.propTypes = {",
+      "\t$3", // Placeholder para definir os PropTypes
+      "};",
+      "",
+      "// Opcional: Definir defaultProps",
+      "// ${1:${TM_FILENAME_BASE}}.defaultProps = {",
+      "// \t",
+      "// };",
+      "",
+      // O nome do componente no export default também usa $1
+      "export default ${1:${TM_FILENAME_BASE}};",
+    ],
+    "description": "Cria um componente funcional React (JS), focando primeiro no nome do componente",
+  },
+}

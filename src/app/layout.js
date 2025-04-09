@@ -5,6 +5,7 @@ import AuthProvider from "@/utils/AuthProvider";
 import { Toaster } from "react-hot-toast";
 import ReduxProvider from "@/utils/ReduxProvider";
 import { ThemeProvider } from "@/frontend/contexts/ThemeContext";
+import Header from "@/frontend/components/header/Header";
 
 export const metadata = {
   title: "Create Next App",
@@ -18,13 +19,14 @@ export default async function RootLayout({ children }) {
         <title>Meu Site</title>
         <meta name="description" content="Descrição do meu site" />
       </head>
-      <body className="font-sans bg-system-background text-system-text dark:bg-dark-background dark:text-dark-text">
+      <body className="font-sans bg-light-background text-light-text dark:bg-dark-background dark:text-dark-text">
         <ThemeProvider>
           <AuthProvider>
             <Toaster position="top-right" />
-            <div className="flex justify-center items-center">
+            <Header />
+            <div>
               <Sidebar />
-              <main className="p-4 md:p-10">
+              <main className="p-0 pt-[5.5rem] md:pl-[6rem] md:pb-[2rem] md:pr-[1rem]">
                 <ReduxProvider>{children}</ReduxProvider>
               </main>
             </div>

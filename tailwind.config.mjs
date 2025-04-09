@@ -1,7 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 export default {
   content: [
-    "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/frontend/components/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
   ],
@@ -13,38 +12,7 @@ export default {
       xl: "1280px",
     },
     extend: {
-      fontFamily: {
-        orbitron: ["Orbitron", "sans-serif"],
-      },
       colors: {
-        // Tema System: Segue as cores do SO via prefers-color-scheme
-        system: {
-          background: "var(--background, #FFFFFF)",
-          "background-sidebar": "var(--background-sidebar, #F5F5F5)",
-          "background-form": "var(--background-form, #FFFFFF)",
-          "background-form-secondary":
-            "var(--background-form-secondary, #E5E7EB)",
-          "background-table": "var(--background-table, #F9FAFB)",
-
-          "background-card": "var(--background-card, #FFFFFF)",
-          text: "var(--text, #1F2937)",
-          "text-label": "var(--text-label, #4B5563)",
-          "text-placeholder": "var(--text-placeholder, #9CA3AF)",
-          "text-table": "var(--text-table, #374151)",
-          "text-button": "var(--text-button, #FFFFFF)",
-          "text-error": "var(--text-error, #DC2626)",
-          primary: "var(--primary, #3B82F6)",
-          "primary-dark": "var(--primary-dark, #1D4ED8)",
-          secondary: "var(--secondary, #10B981)",
-          "secondary-dark": "var(--secondary-dark, #047857)",
-          accent: "var(--accent, #6B7280)",
-          border: "var(--border, #D1D5DB)",
-          "border-focus": "var(--border-focus, #3B82F6)",
-          muted: "var(--muted, #6B7280)",
-          danger: "var(--danger, #EF4444)",
-          "danger-dark": "var(--danger-dark, #B91C1C)",
-          icon: "var(--icon, #4B5563)",
-        },
         // Tema Light: Cores fixas para modo claro
         light: {
           background: "#FFFFFF",

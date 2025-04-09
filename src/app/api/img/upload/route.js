@@ -3,6 +3,12 @@ import fs from "fs/promises";
 import path from "path";
 import { v4 as uuidv4 } from "uuid";
 
+export const config = {
+  api: {
+    bodyParser: false,
+  },
+};
+
 export async function POST(request) {
   try {
     const formData = await request.formData();
@@ -10,37 +16,33 @@ export async function POST(request) {
 
     if (!file) {
       return NextResponse.json(
-        { ok: false, message: "Nenhum arquivo enviado" },
+        { success: false, message: "Nenhum arquivo enviado" },
         { status: 400 }
       );
     }
 
-    // Preserva a extensão do arquivo original
+    const uploadDir = path.join(process.cwd(), "public", "uploads");
+    await fs.mkdir(uploadDir, { recursive: true });
+
     const fileExt = path.extname(file.name);
-    const fileId = `${uuidv4()}${fileExt}`; // UUID + extensão original
+    const fileName = `${uuidv4()}${fileExt}`;
+    const filePath = path.join(uploadDir, fileName);
 
-    const tempDir = path.join(process.cwd(), "public", "temp");
-    const filePath = path.join(tempDir, fileId);
-
-    // Garante que o diretório existe
-    await fs.mkdir(tempDir, { recursive: true });
-
-    // Converte e salva o arquivo
     const buffer = Buffer.from(await file.arrayBuffer());
     await fs.writeFile(filePath, buffer);
 
+    // Retorna APENAS a URL como string
     return NextResponse.json(
       {
-        ok: true,
-        fileId, // Retorna o ID com extensão
-        message: "Upload temporário realizado com sucesso",
+        success: true,
+        picture: fileName,
       },
       { status: 200 }
     );
   } catch (error) {
-    console.error("Erro no upload temporário:", error);
+    console.error("Erro no upload:", error);
     return NextResponse.json(
-      { ok: false, message: "Erro no processamento do arquivo" },
+      { success: false, message: "Erro no upload do arquivo" },
       { status: 500 }
     );
   }

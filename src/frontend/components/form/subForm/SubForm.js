@@ -21,6 +21,9 @@ const SubForm = ({
   schema,
   errors: externalErrors,
   width = "w-full",
+  setError,
+  clearErrors,
+  isSubmitting,
 }) => {
   const {
     fields: items,
@@ -72,64 +75,149 @@ const SubForm = ({
     [name, getValues]
   );
 
+  /**
+   * Valida um campo específico do formulário
+   * @param {string} fieldName - Nome do campo a ser validado
+   * @param {any} value - Valor do campo
+   * @returns {Promise<boolean>} true se o campo é válido, false caso contrário
+   */
   const validateField = useCallback(
     async (fieldName, value) => {
       try {
-        await schema.fields[fieldName].validate(value);
-        setTempErrors((prev) => ({ ...prev, [fieldName]: "" }));
-      } catch (err) {
-        if (err instanceof Yup.ValidationError) {
-          setTempErrors((prev) => ({ ...prev, [fieldName]: err.message }));
+        // Verifica se o campo existe no schema
+        if (!schema.fields[fieldName]) {
+          console.warn(`Campo ${fieldName} não encontrado no schema`);
+          return true;
         }
+
+        // Valida o campo
+        await schema.fields[fieldName].validate(value);
+
+        // Limpa o erro do campo
+        setTempErrors((prev) => ({ ...prev, [fieldName]: "" }));
+        return true;
+      } catch (err) {
+        // Trata o erro de validação
+        if (err instanceof Yup.ValidationError) {
+          const errorMessage = err.message || `Campo ${fieldName} inválido`;
+          console.debug(
+            `Erro de validação no campo ${fieldName}:`,
+            errorMessage
+          );
+
+          // Define o erro do campo
+          setTempErrors((prev) => ({ ...prev, [fieldName]: errorMessage }));
+          return false;
+        }
+
+        // Trata outros tipos de erro
+        console.error(`Erro inesperado ao validar campo ${fieldName}:`, err);
+        setTempErrors((prev) => ({
+          ...prev,
+          [fieldName]: "Erro inesperado na validação",
+        }));
+        return false;
       }
     },
     [schema]
   );
 
+  /**
+   * Valida o formulário completo
+   * @param {Object} data - Dados do formulário
+   * @returns {Promise<boolean>} true se o formulário é válido, false caso contrário
+   */
   const validateForm = useCallback(
     async (data) => {
       try {
+        // Valida todos os campos de uma vez
         await schema.validate(data, { abortEarly: false });
+
+        // Limpa todos os erros
         setTempErrors({});
         return true;
       } catch (err) {
+        // Trata o erro de validação
         if (err instanceof Yup.ValidationError) {
+          console.debug("Erros de validação no formulário:", err.inner);
+
+          // Mapeia os erros para cada campo
           const newErrors = {};
           err.inner.forEach((error) => {
             newErrors[error.path] = error.message;
           });
+
+          // Define os erros dos campos
           setTempErrors(newErrors);
           return false;
         }
+
+        // Trata outros tipos de erro
+        console.error("Erro inesperado ao validar formulário:", err);
+        setTempErrors({ form: "Erro inesperado na validação do formulário" });
+        return false;
       }
     },
     [schema]
   );
 
+  /**
+   * Salva os dados do formulário
+   * @param {number|null} index - Índice do item a ser atualizado, ou null para criar um novo
+   * @returns {Promise<void>}
+   */
   const handleSave = useCallback(
     async (index) => {
-      const isValid = await validateForm(tempData);
+      try {
+        // Valida o formulário
+        const isValid = await validateForm(tempData);
 
-      if (!isValid) {
-        return;
-      }
+        if (!isValid) {
+          // Se o formulário não for válido, mostra o primeiro erro
+          const firstErrorKey = Object.keys(tempErrors)[0];
+          if (firstErrorKey && tempErrors[firstErrorKey]) {
+            console.debug(`Erro ao salvar: ${tempErrors[firstErrorKey]}`);
+          }
+          return;
+        }
 
-      if (index !== null) {
-        update(index, tempData);
-      } else {
-        append({ ...tempData });
+        // Atualiza ou cria um novo item
+        if (index !== null) {
+          update(index, tempData);
+        } else {
+          append({ ...tempData });
+        }
+
+        // Limpa o formulário
+        resetForm();
+
+        // Dispara a validação do formulário principal
+        await trigger(name);
+      } catch (error) {
+        // Trata erros inesperados
+        console.error("Erro ao salvar item:", error);
+        setTempErrors({
+          form: "Erro inesperado ao salvar. Tente novamente.",
+        });
       }
-      resetForm();
-      await trigger(name);
     },
-    [name, tempData, validateForm, append, update, resetForm, trigger]
+    [
+      name,
+      tempData,
+      tempErrors,
+      validateForm,
+      append,
+      update,
+      resetForm,
+      trigger,
+    ]
   );
 
   const renderForm = (index = null) => {
     const fieldPath = `${name}.${index === null ? "temp" : index}`;
     return (
       <div
-        className={`w-full ${width} p-4 border border-system-border dark:border-dark-border`}
+        className={`w-full ${width} p-4 border border-light-border dark:border-dark-border`}
       >
         <div className="grid grid-cols-[repeat(auto-fit,minmax(min(300px,100%),1fr))] gap-4 w-full">
           {fields
@@ -177,7 +265,7 @@ const SubForm = ({
                     value={fieldValue ? fieldValue.substring(0, 10) : ""}
                     onChange={handleFieldChange}
                     error={fieldError}
-                    className="w-full text-system-text dark:text-dark-text"
+                    className="w-full text-light-text dark:text-dark-text"
                   />
                 );
               }
@@ -192,7 +280,7 @@ const SubForm = ({
                     onChange={handleFieldChange}
                     options={field.options}
                     error={fieldError}
-                    className="w-full text-system-text dark:text-dark-text"
+                    className="w-full text-light-text dark:text-dark-text"
                   />
                 );
               }
@@ -206,7 +294,7 @@ const SubForm = ({
                   value={fieldValue}
                   onChange={handleFieldChange}
                   error={fieldError}
-                  className="w-full text-system-text dark:text-dark-text"
+                  className="w-full text-light-text dark:text-dark-text"
                   inputMode={field.type === "number" ? "numeric" : undefined}
                   pattern={field.type === "number" ? "[0-9]*" : undefined}
                 />
@@ -239,28 +327,51 @@ const SubForm = ({
     ? `${fields.map(() => "1fr").join(" ")} 60px 60px`
     : "grid-cols-1";
 
+  /**
+   * Altera o estado de "principal" de um item
+   * @param {number} index - Índice do item a ser alterado
+   * @returns {void}
+   */
   const handleMainCheckboxChange = useCallback(
     (index) => {
-      const updatedItems = items.map((item, idx) => ({
-        ...item,
-        is_main: idx === index ? !item.is_main : false,
-      }));
-      updatedItems.forEach((item, idx) => update(idx, item));
+      try {
+        // Verifica se o índice é válido
+        if (index < 0 || index >= items.length) {
+          console.error(`Índice inválido: ${index}`);
+          return;
+        }
+
+        // Atualiza o estado de "principal" de todos os itens
+        // Apenas o item selecionado será marcado como principal
+        const updatedItems = items.map((item, idx) => ({
+          ...item,
+          is_main: idx === index ? !item.is_main : false,
+        }));
+
+        // Atualiza cada item individualmente
+        updatedItems.forEach((item, idx) => update(idx, item));
+
+        // Dispara a validação do formulário principal
+        trigger(name);
+      } catch (error) {
+        // Trata erros inesperados
+        console.error("Erro ao alterar item principal:", error);
+      }
     },
-    [items, update]
+    [items, update, trigger, name]
   );
 
   return (
-    <section>
-      <div className="flex flex-col border-b border-system-border dark:border-dark-border">
+    <section id={`subform-${name}`}>
+      <div className="flex flex-col border-b border-light-border dark:border-dark-border">
         <h2
-          className={`flex items-center gap-2 ${externalErrors ? "" : "pb-4"} text-lg sm:text-xl text-system-text dark:text-dark-text`}
+          className={`flex items-center gap-2 ${externalErrors ? "" : "pb-4"} text-lg sm:text-xl text-light-text dark:text-dark-text`}
         >
-          <Icon className="w-5 h-5 sm:w-6 sm:h-6 text-system-primary dark:text-dark-primary" />
+          <Icon className="w-5 h-5 sm:w-6 sm:h-6 text-light-primary dark:text-dark-primary" />
           {title}
         </h2>
         {externalErrors && (
-          <span className="text-xs pb-4 sm:text-sm text-system-text-error dark:text-dark-text-error">
+          <span className="text-xs pb-4 sm:text-sm text-light-text-error dark:text-dark-text-error">
             {externalErrors}
           </span>
         )}
@@ -269,9 +380,9 @@ const SubForm = ({
       {items.length > 0 && (
         <div className={`pt-2 w-full ${width}`}>
           {/* Desktop grid */}
-          <div className="hidden md:block w-full text-system-text-table dark:text-dark-text-table bg-system-background-table dark:bg-dark-background-table border border-system-border dark:border-dark-border">
+          <div className="hidden md:block w-full text-light-text-table dark:text-dark-text-table bg-light-background-table dark:bg-dark-background-table border border-light-border dark:border-dark-border">
             <div
-              className={`grid ${gridTemplateColumns} gap-x-4 border-b border-system-border-table-header dark:border-dark-border-table-header pb-2 text-xs sm:text-sm font-medium text-system-text-table-header dark:text-dark-text-table-header items-center bg-system-background-table-header dark:bg-dark-background-table-header`}
+              className={`grid ${gridTemplateColumns} gap-x-4 border-b border-light-border-table-header dark:border-dark-border-table-header pb-2 text-xs sm:text-sm font-medium text-light-text-table-header dark:text-dark-text-table-header items-center bg-light-background-table-header dark:bg-dark-background-table-header`}
               style={{ gridTemplateColumns }}
             >
               {fields.map((field) => (
@@ -285,11 +396,11 @@ const SubForm = ({
             {items.map((item, index) => (
               <div
                 key={item.internalId}
-                className={`even:bg-system-background-form-secondary dark:even:bg-dark-background-form-secondary hover:bg-system-accent dark:hover:bg-dark-accent ${index === items.length - 1 ? "border-b-0" : "border-b border-system-border dark:border-dark-border"}`}
+                className={`even:bg-light-background-form-secondary dark:even:bg-dark-background-form-secondary hover:bg-light-accent dark:hover:bg-dark-accent ${index === items.length - 1 ? "border-b-0" : "border-b border-light-border dark:border-dark-border"}`}
               >
                 {editIndex !== index ? (
                   <div
-                    className={`grid ${gridTemplateColumns} text-system-text-table dark:text-dark-text-table text-xs sm:text-sm items-center p-4`}
+                    className={`grid ${gridTemplateColumns} text-light-text-table dark:text-dark-text-table text-xs sm:text-sm items-center p-4`}
                     style={{ gridTemplateColumns }}
                   >
                     {fields.map((field) =>
@@ -329,14 +440,14 @@ const SubForm = ({
                       <button
                         type="button"
                         onClick={() => handleEdit(index)}
-                        className="text-system-primary dark:text-dark-primary hover:text-system-primary-dark dark:hover:text-dark-primary-dark"
+                        className="text-light-primary dark:text-dark-primary hover:text-light-primary-dark dark:hover:text-dark-primary-dark"
                       >
                         <FaEdit />
                       </button>
                       <button
                         type="button"
                         onClick={() => remove(index)}
-                        className="text-system-danger dark:text-dark-danger hover:text-system-danger-dark dark:hover:text-dark-danger-dark"
+                        className="text-light-danger dark:text-dark-danger hover:text-light-danger-dark dark:hover:text-dark-danger-dark"
                       >
                         <FiTrash2 />
                       </button>
@@ -350,11 +461,11 @@ const SubForm = ({
           </div>
 
           {/* Mobile cards */}
-          <div className="md:hidden w-full text-system-text-table dark:text-dark-text-table">
+          <div className="md:hidden w-full text-light-text-table dark:text-dark-text-table">
             {items.map((item, index) => (
               <div
                 key={item.internalId}
-                className={`p-4 mb-2 bg-system-background-card dark:bg-dark-background-card rounded-md border border-system-border dark:border-dark-border ${editIndex === index ? "bg-system-background-form-secondary dark:bg-dark-background-form-secondary" : ""}`}
+                className={`p-4 mb-2 bg-light-background-card dark:bg-dark-background-card rounded-md border border-light-border dark:border-dark-border ${editIndex === index ? "bg-light-background-form-secondary dark:bg-dark-background-form-secondary" : ""}`}
               >
                 {editIndex !== index ? (
                   <div>
@@ -363,7 +474,7 @@ const SubForm = ({
                         key={field.name}
                         className="mb-2 flex justify-between items-center"
                       >
-                        <span className="font-medium text-xs sm:text-sm text-system-text-table-header dark:text-dark-text-header">
+                        <span className="font-medium text-xs sm:text-sm text-light-muted dark:text-dark-muted">
                           {field.label}:
                         </span>
                         <div className="flex items-center">
@@ -393,7 +504,7 @@ const SubForm = ({
                       </div>
                     ))}
                     <div className="mb-2 flex justify-between items-center">
-                      <span className="font-medium text-xs sm:text-sm text-system-muted dark:text-dark-muted">
+                      <span className="font-medium text-xs sm:text-sm text-light-muted dark:text-dark-muted">
                         Principal:
                       </span>
                       <div className="flex items-center">
@@ -406,21 +517,21 @@ const SubForm = ({
                       </div>
                     </div>
                     <div className="mb-2 flex justify-between items-center">
-                      <span className="font-medium text-xs sm:text-sm text-system-muted dark:text-dark-muted">
+                      <span className="font-medium text-xs sm:text-sm text-light-muted dark:text-dark-muted">
                         Ações:
                       </span>
                       <div className="flex gap-2 justify-center">
                         <button
                           type="button"
                           onClick={() => handleEdit(index)}
-                          className="text-system-primary dark:text-dark-primary hover:text-system-primary-dark dark:hover:text-dark-primary-dark"
+                          className="text-light-primary dark:text-dark-primary hover:text-light-primary-dark dark:hover:text-dark-primary-dark"
                         >
                           <FaEdit />
                         </button>
                         <button
                           type="button"
                           onClick={() => remove(index)}
-                          className="text-system-danger dark:text-dark-danger hover:text-system-danger-dark dark:hover:text-dark-danger-dark"
+                          className="text-light-danger dark:text-dark-danger hover:text-light-danger-dark dark:hover:text-dark-danger-dark"
                         >
                           <FiTrash2 />
                         </button>
@@ -442,7 +553,7 @@ const SubForm = ({
         <button
           type="button"
           onClick={handleAdd}
-          className="pt-2 flex items-center gap-1 py-1 text-xs sm:text-sm text-system-primary dark:text-dark-primary hover:text-system-primary-dark dark:hover:text-dark-primary-dark"
+          className="pt-2 flex items-center gap-1 py-1 text-xs sm:text-sm text-light-primary dark:text-dark-primary hover:text-light-primary-dark dark:hover:text-dark-primary-dark"
         >
           <FaPlus /> Adicionar {title}
         </button>
