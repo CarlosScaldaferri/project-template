@@ -33,7 +33,7 @@ export default function UserLogin() {
               throw new Error("ID do usuário não disponível");
             }
 
-            await router.push(`/user/register?userId=${session.user.id}`);
+            await router.push(`user/edit?userId=${session.user.id}`);
             break;
 
           case "notifications":

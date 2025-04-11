@@ -40,8 +40,7 @@ export default function CustomInput({
 
   // Gera um ID único para o input
   const inputId = useMemo(
-    () =>
-      `input-${label?.replace(/\s+/g, "-")?.toLowerCase() || "custom"}-${Math.random().toString(36).substring(2, 9)}`,
+    () => `input-${label?.replace(/\s+/g, "-")?.toLowerCase() || "custom"}`,
     [label]
   );
 

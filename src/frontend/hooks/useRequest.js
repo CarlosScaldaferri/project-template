@@ -1,6 +1,6 @@
 "use client";
 import { fetchRequest } from "@/shared/general/fetchRequest";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 /**
  * Hook para fazer requisições à API
@@ -9,6 +9,13 @@ import { useCallback, useState } from "react";
 const useRequest = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
+  const isMounted = useRef(true);
+
+  useEffect(() => {
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
 
   /**
    * Função para fazer requisições à API
@@ -27,7 +34,9 @@ const useRequest = () => {
 
       // Se houver um erro na resposta, atualiza o estado de erro
       if (!response.ok && response.error) {
-        setError(new Error(response.error));
+        if (isMounted.current) {
+          setError(new Error(response.error));
+        }
       }
 
       return response;
@@ -41,10 +50,14 @@ const useRequest = () => {
         error: err.message || "Erro na requisição",
       };
 
-      setError(err);
+      if (isMounted.current) {
+        setError(err);
+      }
       return formattedError;
     } finally {
-      setIsLoading(false);
+      if (isMounted.current) {
+        setIsLoading(false);
+      }
     }
   }, []);
 

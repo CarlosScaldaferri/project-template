@@ -1,4 +1,4 @@
-// src/lib/auth-wrapper.js
+// src/lib/authWrapper.js
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";

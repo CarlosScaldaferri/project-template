@@ -8,8 +8,6 @@ import db from "../../../prisma/db";
  */
 export const dbFindUserById = async (id, includeOptions = {}) => {
   try {
-    safeLog("Buscando usuário por ID:", { id, includeOptions });
-
     return await db.user.findUnique({
       where: { id },
       include: {
@@ -33,8 +31,6 @@ export const dbFindUserById = async (id, includeOptions = {}) => {
  */
 export const dbUserIsAdmin = async (id) => {
   try {
-    safeLog("Verificando se usuário é admin:", { id });
-
     const user = await db.user.findUnique({
       where: { id },
       include: {
@@ -73,11 +69,6 @@ export const dbUserIsAdmin = async (id) => {
  */
 export const dbFindUserByEmail = async (email, includeOptions = {}) => {
   try {
-    safeLog("Buscando usuário por email:", {
-      emailProvided: !!email,
-      includeOptions,
-    });
-
     // Busca o usuário pelo email na relação "email"
     const user = await db.user.findFirst({
       where: {
@@ -101,24 +92,7 @@ export const dbFindUserByEmail = async (email, includeOptions = {}) => {
   }
 };
 
-/**
- * Função utilitária para log seguro que não expõe dados sensíveis
- * @param {string} message - Mensagem a ser logada
- * @param {Object} data - Dados a serem logados, serão sanitizados para remover informações sensíveis
- */
-const safeLog = (message, data = {}) => {
-  // Cria uma cópia para não modificar o objeto original
-  const sanitizedData = { ...data };
-
-  // Remove dados sensíveis
-  if (sanitizedData.password) sanitizedData.password = "[REDACTED]";
-  if (sanitizedData.email) sanitizedData.email = "[EMAIL DATA]";
-  if (sanitizedData.telephone) sanitizedData.telephone = "[TELEPHONE DATA]";
-  if (sanitizedData.address) sanitizedData.address = "[ADDRESS DATA]";
-  if (sanitizedData.cpf) sanitizedData.cpf = "[REDACTED]";
-
-  console.log(message, sanitizedData);
-};
+// Função safeLog removida
 
 /**
  * Cria um novo usuário com seus relacionamentos (email, telefone, endereço)
@@ -126,9 +100,6 @@ const safeLog = (message, data = {}) => {
  * @returns {Promise<Object>} Usuário criado com seus relacionamentos
  */
 export const dbCreateUser = async (data) => {
-  // Log seguro que não expõe dados sensíveis
-  safeLog("Criando usuário:", { id: data.id, name: data.name });
-
   try {
     return await db.user.create({
       data: {
@@ -302,15 +273,6 @@ export const dbUpdateUser = async (id, data) => {
       ...(telephoneDiff && { telephone: telephoneDiff }),
     };
 
-    // Log seguro que não expõe dados sensíveis
-    safeLog("Atualizando usuário:", {
-      id,
-      fieldsToUpdate: Object.keys(baseUpdateData),
-      hasAddressDiff: !!addressDiff,
-      hasEmailDiff: !!emailDiff,
-      hasTelephoneDiff: !!telephoneDiff,
-    });
-
     // 5. Execute the update
     return await db.user.update({
       where: { id },
@@ -337,31 +299,59 @@ export const dbUpdateUser = async (id, data) => {
 };
 
 /**
- * Busca todos os usuários
- * @returns {Promise<Array>} Lista de usuários
+ * Busca usuários com paginação
+ * @param {number} startIndex - Índice inicial do intervalo
+ * @param {number} endIndex - Índice final do intervalo (não inclusivo)
+ * @returns {Promise<Array>} Lista de usuários dentro do intervalo
  */
-export const dbGetAllUsers = async () => {
-  try {
-    safeLog("Buscando todos os usuários");
+// src/backend/database/userDatabase.js  (Ajuste o nome do arquivo/caminho)
 
-    return await db.user.findMany();
+export const dbGetUsers = async (options) => {
+  const { skip, take, where, orderBy, include } = options;
+
+  try {
+    // Garante que db e db.user existam
+    if (!db || !db.user) {
+      throw new Error(
+        "Instância do Prisma Client ('db') ou modelo 'user' não encontrado."
+      );
+    }
+
+    // Executa as consultas de busca e contagem em paralelo
+    const [users, count] = await db.$transaction([
+      db.user.findMany({
+        skip,
+        take,
+        where,
+        orderBy,
+        ...(include && { include }), // Adiciona include apenas se ele foi passado
+      }),
+      db.user.count({
+        where, // IMPORTANTE: count usa o MESMO 'where' do findMany
+      }),
+    ]);
+
+    // console.log(`dbGetUsers: Encontrados ${users.length} usuários (Total: ${count})`); // Log opcional básico
+    return { users, count }; // Retorna ambos os resultados
   } catch (error) {
-    console.error("Erro ao buscar todos os usuários:", error);
+    console.error("Erro detalhado em dbGetUsers:", {
+      // Mantido console.error básico
+      // options: { skip, take, where: JSON.stringify(where), orderBy, include: !!include }, // Descomente para ver opções no erro
+      errorCode: error.code,
+      errorMessage: error.message,
+    });
+    // Re-throw um erro para a camada de serviço tratar
     throw new Error(
-      `Falha ao buscar usuários no banco de dados: ${error.message}`
+      `Falha no banco de dados ao buscar usuários. ${error.code ? `(Código: ${error.code})` : ""} Msg: ${error.message}`
     );
   }
-};
-
-/**
+}; /**
  * Deleta todos os emails de um usuário
  * @param {number} userId - ID do usuário
  * @returns {Promise<Object>} Resultado da operação
  */
 export const deleteEmailsByUserId = async (userId) => {
   try {
-    safeLog("Deletando emails do usuário:", { userId });
-
     return await db.email.deleteMany({ where: { user_id: userId } });
   } catch (error) {
     console.error("Erro ao deletar emails do usuário:", error);
@@ -378,8 +368,6 @@ export const deleteEmailsByUserId = async (userId) => {
  */
 export const createEmails = async (emails) => {
   try {
-    safeLog("Criando emails:", { count: emails.length });
-
     return await Promise.all(
       emails.map((email) =>
         db.email.create({

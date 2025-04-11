@@ -5,8 +5,8 @@
 
 import bcrypt from "bcryptjs";
 import {
+  dbGetUsers,
   dbCreateUser,
-  dbGetAllUsers,
   dbUpdateUser,
   dbFindUserByEmail,
   dbFindUserById,
@@ -15,18 +15,151 @@ import {
 
 class BackendUserService {
   /**
-   * Busca todos os usuários
-   * @returns {Promise<Array>} Lista de usuários
+   * Busca usuários com paginação
+   * @param {number} startIndex - Índice inicial do intervalo
+   * @param {number} endIndex - Índice final do intervalo (não inclusivo)
+   * @returns {Promise<Array>} Lista de usuários dentro do intervalo
    */
-  async getAllUsers() {
+  async getUsers(options) {
+    const {
+      skip,
+      take,
+      sortField,
+      sortOrder,
+      searchTerm,
+      includeMainEmail,
+      includeMainTelephone,
+      includeMainAddress,
+      secondarySortField,
+      secondarySortOrder,
+    } = options;
+
     try {
-      return await dbGetAllUsers();
+      // --- 1. Constrói objeto 'where' para filtro ---
+      const where = {};
+      if (searchTerm) {
+        where.OR = [
+          { name: { contains: searchTerm, mode: "insensitive" } },
+          { nickname: { contains: searchTerm, mode: "insensitive" } },
+          { cpf: { contains: searchTerm, mode: "insensitive" } },
+          // Adicionar busca em campos relacionados aqui requer lógica mais complexa
+        ];
+      }
+
+      // --- 2. Constrói array 'orderBy' ---
+      const orderBy = [];
+      orderBy.push({ [sortField]: sortOrder });
+      if (secondarySortField && secondarySortField !== sortField) {
+        orderBy.push({ [secondarySortField]: secondarySortOrder });
+      }
+      // Atenção à ordenação por campos como 'mainEmail'/'mainTelephone' - pode exigir ajustes
+
+      // --- 3. Constrói objeto 'include' para dados principais ---
+      const include = {};
+      if (includeMainEmail) {
+        include.email = {
+          // Nome da relação no model 'user'
+          where: { is_main: true },
+          take: 1,
+          select: { email: true }, // Seleciona apenas o campo necessário
+        };
+      }
+      if (includeMainTelephone) {
+        include.telephone = {
+          // Nome da relação no model 'user'
+          where: { is_main: true },
+          take: 1,
+          // Seleciona campos para montar ou usa 'full_number'
+          select: {
+            country_code: true,
+            state_code: true,
+            number: true,
+            full_number: true,
+          },
+        };
+      }
+      if (includeMainAddress) {
+        // VERIFIQUE A RELAÇÃO NO SEU MODEL 'user' (address ou addresses)
+        include.address = {
+          // Assumindo 'address address[]' no model user
+          where: { is_main: true }, // Assume campo 'is_main' em 'address'
+          take: 1,
+          select: {
+            street: true,
+            number: true,
+            city: true,
+            zip: true /* outros campos*/,
+          },
+        };
+      }
+
+      // --- 4. Chama a camada de banco de dados ---
+      const { users, count } = await dbGetUsers({
+        skip,
+        take,
+        where,
+        orderBy,
+        include: Object.keys(include).length > 0 ? include : undefined,
+      });
+
+      // --- 5. Transformação de Dados ---
+      const transformedUsers = users.map((user) => {
+        // Extrai email principal
+        const mainEmail = includeMainEmail
+          ? (user.email?.[0]?.email ?? null)
+          : undefined;
+
+        // Extrai telefone principal
+        const mainTelephoneData = includeMainTelephone
+          ? user.telephone?.[0]
+          : null;
+        let mainTelephoneNumber = null;
+        if (mainTelephoneData) {
+          mainTelephoneNumber =
+            mainTelephoneData.full_number ||
+            `(${mainTelephoneData.country_code || ""}) ${mainTelephoneData.state_code || ""} ${mainTelephoneData.number || ""}`;
+          mainTelephoneNumber = mainTelephoneNumber.trim();
+        }
+
+        // Extrai endereço principal
+        const mainAddressData = includeMainAddress ? user.address?.[0] : null;
+        let mainAddressString = null;
+        if (mainAddressData) {
+          const parts = [
+            mainAddressData.street,
+            mainAddressData.number,
+            mainAddressData.city,
+            mainAddressData.zip,
+          ];
+          mainAddressString = parts.filter(Boolean).join(", ");
+        }
+
+        // Remove as propriedades relacionais originais
+        const { email, telephone, address, ...restOfUser } = user;
+
+        // Retorna o objeto do usuário transformado
+        return {
+          ...restOfUser,
+          ...(includeMainEmail && { mainEmail }),
+          ...(includeMainTelephone && { mainTelephone: mainTelephoneNumber }),
+          ...(includeMainAddress && { mainAddress: mainAddressString }),
+        };
+      });
+
+      // --- 6. Retorna sucesso ---
+      return { ok: true, data: transformedUsers, totalCount: count };
     } catch (error) {
-      console.error("Erro ao buscar todos os usuários:", error.message);
-      throw new Error(`Falha ao buscar usuários: ${error.message}`);
+      console.error("Erro no serviço getUsers:", {
+        // Mantido console.error básico
+        errorMessage: error.message,
+        // options: options // Descomente se precisar ver as opções no erro
+      });
+      // Propaga o erro para ser tratado pelo createApiHandler
+      throw new Error(`Falha ao processar busca de usuários: ${error.message}`);
+      // OU retorne { ok: false, error: ... } se createApiHandler não tratar throws
+      // return { ok: false, error: `Falha ao processar busca de usuários: ${error.message}` };
     }
   }
-
   /**
    * Cria um novo usuário
    * @param {Object} apiUser - Dados do usuário a ser criado
@@ -156,45 +289,6 @@ class BackendUserService {
     } catch (error) {
       console.error(`Erro ao buscar usuário por ID (${id}):`, error.message);
       throw new Error(`Falha ao buscar usuário: ${error.message}`);
-    }
-  }
-
-  /**
-   * Cria ou atualiza um usuário dependendo se ele já existe
-   * @param {Object} apiUser - Dados do usuário a ser criado ou atualizado
-   * @returns {Promise<Object>} Objeto com status da operação e dados do usuário
-   * @throws {Error} Erro ao criar ou atualizar usuário
-   */
-  async createOrUpdateUser(apiUser) {
-    try {
-      if (!apiUser) {
-        throw new Error("Dados do usuário não fornecidos");
-      }
-
-      if (!apiUser.id) {
-        throw new Error("ID do usuário não fornecido para criação/atualização");
-      }
-
-      // Verifica se o usuário existe
-      const tempUser = await this.findUserById(apiUser.id);
-
-      if (!tempUser) {
-        // Se o usuário não existe, cria um novo (createUser já faz o hash da senha)
-        return this.createUser(apiUser);
-      }
-
-      // Se o usuário existe, atualiza
-      // Nota: updateUser não faz hash da senha, pois a senha só pode ser alterada via fluxo específico
-      return this.updateUser(apiUser.id, apiUser);
-    } catch (error) {
-      console.error(
-        `Erro ao criar/atualizar usuário (ID: ${apiUser?.id}):`,
-        error.message
-      );
-      return {
-        ok: false,
-        error: `Falha ao criar/atualizar usuário: ${error.message}`,
-      };
     }
   }
 }

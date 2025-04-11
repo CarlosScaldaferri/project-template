@@ -370,11 +370,15 @@ const SubForm = ({
           <Icon className="w-5 h-5 sm:w-6 sm:h-6 text-light-primary dark:text-dark-primary" />
           {title}
         </h2>
-        {externalErrors && (
-          <span className="text-xs pb-4 sm:text-sm text-light-text-error dark:text-dark-text-error">
-            {externalErrors}
-          </span>
-        )}
+        {externalErrors &&
+          typeof externalErrors === "object" &&
+          !Array.isArray(externalErrors) &&
+          externalErrors.message && (
+            <span className="text-xs pb-4 sm:text-sm text-light-text-error dark:text-dark-text-error">
+              {/* Renderize APENAS a mensagem */}
+              {externalErrors.message}
+            </span>
+          )}
       </div>
 
       {items.length > 0 && (

@@ -44,6 +44,11 @@ const menuItems = [
     icon: <FaUsers fontSize="medium" />,
     children: [
       { id: "all_users", title: "Listar usuários", icon: <FaUserFriends /> },
+      {
+        id: "new_user",
+        title: "Novo usuário",
+        icon: <FaUserFriends />,
+      },
     ],
   },
 ];
@@ -190,7 +195,10 @@ const SidebarComponent = () => {
             router.push("/reports");
             break;
           case "all_users":
-            router.push("/users/list");
+            router.push("/user/search");
+            break;
+          case "new_user":
+            router.push("/user/register");
             break;
           default:
             break;

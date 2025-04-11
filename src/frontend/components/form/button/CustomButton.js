@@ -99,10 +99,13 @@ export default function CustomButton({
   );
 
   // Gera um ID único para o botão para acessibilidade
-  const buttonId = useMemo(
-    () => `btn-${Math.random().toString(36).substring(2, 9)}`,
-    []
-  );
+  const buttonId = useMemo(() => {
+    if (props.id) return props.id;
+    if (children && typeof children === "string") {
+      return `btn-${children.toLowerCase().replace(/\s+/g, "-")}`;
+    }
+    return "btn-custom";
+  }, [children, props.id]);
 
   return (
     <button
